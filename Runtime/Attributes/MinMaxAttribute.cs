@@ -7,7 +7,7 @@ namespace Unity.Properties.UI
     /// Tag a <see cref="Vector2"/> or a <see cref="Vector2Int"/> field to draw it as a min-max slider.
     /// </summary>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
-    public sealed class MinMaxAttribute : PropertyAttribute
+    public sealed class MinMaxAttribute : InspectorAttribute
     {
         /// <summary>
         /// Low-limit value.

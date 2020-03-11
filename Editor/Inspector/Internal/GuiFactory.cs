@@ -237,9 +237,11 @@ namespace Unity.Properties.UI.Internal
             var name = property.Name;
             return property is ICollectionElementProperty
                 ? $"Element {name}"
-                : property.HasAttribute<InspectorNameAttribute>()
-                    ? property.GetAttribute<InspectorNameAttribute>().displayName
-                    : ObjectNames.NicifyVariableName(name);
+                : property.HasAttribute<DisplayNameAttribute>()
+                    ? property.GetAttribute<DisplayNameAttribute>().Name
+                    : property.HasAttribute<InspectorNameAttribute>()
+                        ? property.GetAttribute<InspectorNameAttribute>().displayName
+                        : ObjectNames.NicifyVariableName(name);
         }
 
         internal static void SetTooltip(IProperty property, VisualElement element)
@@ -260,18 +262,9 @@ namespace Unity.Properties.UI.Internal
 
         static void SetReadOnly(IProperty property, VisualElement element)
         {
-            if (property.IsReadOnly && property.DeclaredValueType().IsValueType)
+            if (property.IsReadOnly && (property.DeclaredValueType().IsValueType || !Unity.Properties.Internal.RuntimeTypeInfoCache.IsContainerType(property.DeclaredValueType())))
             {
-                if (element is Foldout foldout)
-                {
-                    foldout.SetEnabled(true);
-                    foldout.AddToClassList("unity-disabled");
-                    foldout.contentContainer.SetEnabled(false);
-                }
-                else
-                {
-                    element.SetEnabled(false);
-                }
+                element.SetEnabledSmart(false);
             }
         }
 

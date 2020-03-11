@@ -10,6 +10,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using Resources = Unity.Properties.UI.Internal.Resources;
 
+#pragma warning disable 649
 namespace Unity.Properties.UI.Tests
 {
     [TestFixture, UI]
@@ -21,12 +22,12 @@ namespace Unity.Properties.UI.Tests
         
         class FilterByAttribute
         {       
-#pragma warning disable 649
+
             [Hide] public int Int;
             [Hide] public string String = "";
             [Hide] public double Double;
             public float Float;
-#pragma warning restore 649
+
         }
 
         class ContainsATexture
@@ -307,3 +308,4 @@ namespace Unity.Properties.UI.Tests
         }
     }
 }
+#pragma warning restore 649

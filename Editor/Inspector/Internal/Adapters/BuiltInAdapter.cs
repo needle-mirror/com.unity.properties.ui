@@ -1,4 +1,6 @@
+using System;
 using Unity.Properties.Adapters;
+using Unity.Properties.Internal;
 using Object = UnityEngine.Object;
 
 namespace Unity.Properties.UI.Internal
@@ -111,12 +113,42 @@ namespace Unity.Properties.UI.Internal
         public VisitStatus Visit<TContainer, TValue>(Property<TContainer, TValue> property, ref TContainer container,
             ref TValue value)
         {
-            if (!typeof(TValue).IsEnum)
-                return VisitStatus.Unhandled;
+            if (RuntimeTypeInfoCache<TValue>.IsEnum)
+                return RuntimeTypeInfoCache<TValue>.IsEnumFlags
+                    ? VisitPrimitive(property, ref value, GuiFactory.FlagsField)
+                    : VisitPrimitive(property, ref value, GuiFactory.EnumField);
+            
+            if (RuntimeTypeInfoCache<TValue>.IsLazyLoadReference)
+            {
+                Visitor.AddToPath(property);
+                try
+                {
+                    var path = Visitor.GetCurrentPath();
+                    var inspector = CustomInspectorDatabase.GetBestInspectorType<TValue>(property);
+                    if (null == inspector)
+                    {
+                        var assetType = typeof(TValue).GetGenericArguments()[0];
+                        var inspectorType = typeof(LazyLoadReferenceInspector<>).MakeGenericType(assetType);
+                        inspector = (Inspector<TValue>) Activator.CreateInstance(inspectorType);
+                    }
+                    inspector.Context = new InspectorContext<TValue>(
+                        Visitor.VisitorContext.Root,
+                        path,
+                        property,
+                        property.GetAttributes()
+                    );
+                    Visitor.VisitorContext.Parent.contentContainer.Add(
+                        new CustomInspectorElement(path, inspector, Visitor.VisitorContext.Root));
+                }
+                finally
+                {
+                    Visitor.RemoveFromPath(property);
+                }
 
-            return Unity.Properties.Internal.RuntimeTypeInfoCache<TValue>.IsEnumFlags
-                ? VisitPrimitive(property, ref value, GuiFactory.FlagsField)
-                : VisitPrimitive(property, ref value, GuiFactory.EnumField);
+                return VisitStatus.Stop;
+            }
+            
+            return VisitStatus.Unhandled;
         }
     }
 }

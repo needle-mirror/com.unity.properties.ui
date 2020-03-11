@@ -15,6 +15,27 @@ namespace Unity.Properties
             element.style.display = DisplayStyle.None;
         }
 
+        public static void SetEnabledSmart(this VisualElement element, bool value)
+        {
+            if (element is Foldout foldout)
+            {
+                if (value)
+                {
+                    foldout.RemoveFromClassList("unity-disabled");
+                }
+                else
+                {
+                    foldout.AddToClassList("unity-disabled");
+                }
+                foldout.SetEnabled(true);
+                foldout.contentContainer.SetEnabled(value);
+            }
+            else
+            {
+                element.SetEnabled(value);
+            }
+        }
+
         public static IEnumerable<T> ChildrenOfType<T>(this VisualElement element)
         {
             foreach (var child in element.Children())

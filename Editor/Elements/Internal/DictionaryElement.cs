@@ -33,7 +33,7 @@ namespace Unity.Properties.UI.Internal
             {
                 m_Reload = reload;
                 (this as IBindable).binding = this;
-                Resources.Templates.AddDictionaryKey.Clone(this);
+                Resources.Templates.AddCollectionItem.Clone(this);
                 m_ShowAddKeyContainerButton = this.Q<Button>(className: UssClasses.AddKeyDictionaryElement.ShowContainerButton);
                 m_ShowAddKeyContainerButton.clickable.clicked += ShowContainer;
                 m_AddKeyContainer = this.Q<VisualElement>(className: UssClasses.AddKeyDictionaryElement.Container);
@@ -85,18 +85,18 @@ namespace Unity.Properties.UI.Internal
                 {
                     m_ErrorIcon.tooltip = NoNullKeysTooltip;
                     m_ErrorIcon.Show();
-                    m_AddKeyToDictionaryButton.SetEnabled(false);
+                    m_AddKeyToDictionaryButton.SetEnabledSmart(false);
                 }
                 else if (m_Dictionary.ContainsKey(target.Key))
                 {
                     m_ErrorIcon.tooltip = KeyAlreadyExistsTooltip;
                     m_ErrorIcon.Show();
-                    m_AddKeyToDictionaryButton.SetEnabled(false);
+                    m_AddKeyToDictionaryButton.SetEnabledSmart(false);
                 }
                 else
                 {
                     m_ErrorIcon.Hide();
-                    m_AddKeyToDictionaryButton.SetEnabled(true);
+                    m_AddKeyToDictionaryButton.SetEnabledSmart(true);
                 }
             }
 

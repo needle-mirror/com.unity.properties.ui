@@ -25,10 +25,10 @@ namespace Unity.Properties.UI.Tests
         protected override void OnSetupReady()
         {
             m_Hidden = new VisualElement();
-            m_Hidden.style.display = DisplayStyle.None;
+            m_Hidden.Hide();
             
             m_Visible = new VisualElement();
-            m_Visible.style.display = DisplayStyle.Flex;
+            m_Visible.Show();
             
             Element.Add(m_Hidden);
             Element.Add(m_Visible);

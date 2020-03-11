@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using UnityEngine;
 
@@ -7,7 +6,7 @@ namespace Unity.Properties.UI
     /// <summary>
     /// Tag a list field or property to add pagination.
     /// </summary>
-    public class PaginationAttribute : Attribute
+    public class PaginationAttribute : InspectorAttribute
     {
         /// <summary>
         /// Returns the pagination sizes that should be displayed.

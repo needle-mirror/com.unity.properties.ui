@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Properties.Internal;
 using UnityEditor;
 using UnityEngine;
 
@@ -110,8 +111,7 @@ namespace Unity.Properties.UI.Internal
                     break;
                 }
             }
-
-            return inspector ?? (inspector = GetRootInspector<TValue>());
+            return inspector ?? GetRootInspector<TValue>();
         }
         
         internal static IInspector<TValue> GetPropertyDrawer<TValue>(params IInspectorConstraint[] constraints)

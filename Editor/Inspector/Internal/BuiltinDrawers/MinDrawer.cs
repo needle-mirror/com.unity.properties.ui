@@ -5,8 +5,9 @@ using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI.Internal
 {
-    abstract class MinDrawer<TElement, TFieldValue, TValue> : BaseFieldDrawer<TElement, TFieldValue, TValue, MinAttribute>
+    abstract class MinDrawerBase<TElement, TFieldValue, TValue, TAttribute> : BaseFieldDrawer<TElement, TFieldValue, TValue, TAttribute>
         where TElement : BaseField<TFieldValue>, new()
+        where TAttribute : PropertyAttribute
     {
         float m_MinValue;
 
@@ -15,9 +16,11 @@ namespace Unity.Properties.UI.Internal
             base.Build();
             m_Field.bindingPath = string.Empty;
             RegisterValueChangedCallback();
-            m_MinValue = GetAttribute<MinAttribute>().min;
+            m_MinValue = GetMinValue();
             return m_Field;
         }
+
+        protected abstract float GetMinValue();
         
         void RegisterValueChangedCallback()
         {
@@ -54,6 +57,20 @@ namespace Unity.Properties.UI.Internal
             }
         }
     }
+
+    abstract class MinValueDrawer<TElement, TFieldValue, TValue> : MinDrawerBase<TElement, TFieldValue, TValue, MinValueAttribute>
+        where TElement : BaseField<TFieldValue>, new()
+    {
+        protected override float GetMinValue()
+            => GetAttribute<MinValueAttribute>().Min;
+    }
+    
+    abstract class MinDrawer<TElement, TFieldValue, TValue> : MinDrawerBase<TElement, TFieldValue, TValue, MinAttribute>
+        where TElement : BaseField<TFieldValue>, new()
+    {
+        protected override float GetMinValue()
+            => GetAttribute<MinAttribute>().min;
+    }
     
     [UsedImplicitly] class MinSByteDrawer : MinDrawer<IntegerField, int, sbyte> { }
     [UsedImplicitly] class MinByteDrawer : MinDrawer<IntegerField, int, byte> { }
@@ -64,5 +81,16 @@ namespace Unity.Properties.UI.Internal
     [UsedImplicitly] class MinLongDrawer : MinDrawer<LongField, long, long> { }
     [UsedImplicitly] class MinULongDrawer : MinDrawer<FloatField, float, ulong> { }
     [UsedImplicitly] class MinFloatDrawer : MinDrawer<FloatField, float, float> { }
-    [UsedImplicitly] class DoubleFloatDrawer : MinDrawer<DoubleField, double, double> { }
+    [UsedImplicitly] class MinDoubleDrawer : MinDrawer<DoubleField, double, double> { }
+    
+    [UsedImplicitly] class MinSByteValueDrawer : MinValueDrawer<IntegerField, int, sbyte> { }
+    [UsedImplicitly] class MinByteValueDrawer : MinValueDrawer<IntegerField, int, byte> { }
+    [UsedImplicitly] class MinShortValueDrawer : MinValueDrawer<IntegerField, int, short> { }
+    [UsedImplicitly] class MinUShortValueDrawer : MinValueDrawer<IntegerField, int, ushort> { }
+    [UsedImplicitly] class MinIntValueDrawer : MinValueDrawer<IntegerField, int, int> { }
+    [UsedImplicitly] class MinUIntValueDrawer : MinValueDrawer<LongField, long, uint> { }
+    [UsedImplicitly] class MinLongValueDrawer : MinValueDrawer<LongField, long, long> { }
+    [UsedImplicitly] class MinULongValueDrawer : MinValueDrawer<FloatField, float, ulong> { }
+    [UsedImplicitly] class MinFloatValueDrawer : MinValueDrawer<FloatField, float, float> { }
+    [UsedImplicitly] class MinDoubleValueDrawer : MinValueDrawer<DoubleField, double, double> { }
 }

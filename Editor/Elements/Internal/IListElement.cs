@@ -14,7 +14,7 @@ namespace Unity.Properties.UI.Internal
         readonly Button m_AddItemButton;
         internal readonly VisualElement m_ContentRoot;
         readonly PaginationElement m_PaginationElement;
-        
+
         bool UsesPagination { get; set; }
 
         public IListElement()
@@ -22,15 +22,15 @@ namespace Unity.Properties.UI.Internal
             Resources.Templates.ListElement.Clone(this);
             Resources.Templates.ListElementDefaultStyling.AddStyles(this);
             binding = this;
-            
+
             m_Size = new IntegerField();
             m_Size.AddToClassList(UssClasses.ListElement.Size);
             m_Size.RegisterValueChangedCallback(CountChanged);
             m_Size.RegisterCallback<KeyDownEvent>(TrapKeys);
             m_Size.isDelayed = true;
-            
+
             var toggle = this.Q<Toggle>();
-            var toggleInput = toggle.Q(className:UssClasses.Unity.ToggleInput);
+            var toggleInput = toggle.Q(className: UssClasses.Unity.ToggleInput);
             toggleInput.AddToClassList(UssClasses.ListElement.ToggleInput);
             toggle.Add(m_Size);
 
@@ -39,7 +39,7 @@ namespace Unity.Properties.UI.Internal
                 text = "+ Add Element"
             };
             m_AddItemButton.AddToClassList(UssClasses.ListElement.AddItemButton);
-            
+
             m_ContentRoot = new VisualElement();
             m_ContentRoot.name = "properties-list-content";
             m_PaginationElement = new PaginationElement();
@@ -56,23 +56,30 @@ namespace Unity.Properties.UI.Internal
 
         public override void OnContextReady()
         {
+            var list = GetValue();
+            if (list.IsReadOnly)
+            {
+                m_Size.SetEnabledSmart(false);
+                m_AddItemButton.SetEnabledSmart(false);
+            }
+
             UsesPagination = HasAttribute<PaginationAttribute>();
             if (!UsesPagination)
             {
                 m_PaginationElement.Enabled = false;
             }
-            
+
             var pagination = GetAttribute<PaginationAttribute>();
-            if (null == pagination) 
+            if (null == pagination)
                 return;
-            
+
             m_PaginationElement.OnChanged += () =>
             {
                 UiPersistentState.SetPaginationState(Root.GetTargetType(), Path, m_PaginationElement.PaginationSize,
                     m_PaginationElement.CurrentPage);
                 Reload();
             };
-            
+
             m_PaginationElement.SetPaginationSizes(pagination.Sizes);
             m_PaginationElement.AutoHide = pagination.AutoHide;
             var paginationData = UiPersistentState.GetPaginationState(Root.GetTargetType(), Path);
@@ -93,9 +100,9 @@ namespace Unity.Properties.UI.Internal
                 return;
 
             m_PaginationElement.Update(list.Count);
-            
+
             if (m_Size.focusController?.focusedElement != m_Size)
-            { 
+            {
                 m_Size.isDelayed = false;
                 m_Size.SetValueWithoutNotify(list.Count);
                 m_Size.isDelayed = true;
@@ -109,7 +116,7 @@ namespace Unity.Properties.UI.Internal
                 startIndex = m_PaginationElement.StartIndex;
                 endIndex = m_PaginationElement.EndIndex;
             }
-            
+
             for (var i = startIndex; i < endIndex; ++i)
             {
                 var index = i;
@@ -127,7 +134,7 @@ namespace Unity.Properties.UI.Internal
                 }
             }
         }
-        
+
         void CountChanged(ChangeEvent<int> evt)
         {
             evt.StopImmediatePropagation();
@@ -144,7 +151,7 @@ namespace Unity.Properties.UI.Internal
                 return;
 
             var constructContext = GetAttribute<CreateElementOnAddAttribute>();
-            
+
             switch (iList)
             {
                 case TElement[] array:
@@ -158,6 +165,7 @@ namespace Unity.Properties.UI.Internal
                     {
                         newArray[i] = CreateInstance(constructContext);
                     }
+
                     Root.SetValue(Path, newArray);
                     break;
                 case List<TElement> list:
@@ -170,8 +178,10 @@ namespace Unity.Properties.UI.Internal
                     {
                         list.Add(CreateInstance(constructContext));
                     }
+
                     break;
             }
+
             Root.NotifyChanged(Path);
             Reload();
         }
@@ -182,7 +192,7 @@ namespace Unity.Properties.UI.Internal
                 return default;
 
             var type = context.Type;
-            return null == type 
+            return null == type
                 ? TypeConstruction.Construct<TElement>()
                 : TypeConstruction.Construct<TElement>(type);
         }
@@ -227,15 +237,15 @@ namespace Unity.Properties.UI.Internal
                 }
             }
         }
-        
+
         void OnAddItem()
         {
             var iList = GetValue();
-            if (null == iList) 
+            if (null == iList)
                 return;
-            
+
             var item = CreateInstance(GetAttribute<CreateElementOnAddAttribute>());
-            
+
             switch (iList)
             {
                 case TElement[] array:
@@ -245,6 +255,7 @@ namespace Unity.Properties.UI.Internal
                     list.Add(item);
                     break;
             }
+
             Root.NotifyChanged(Path);
             m_PaginationElement.TotalCount = iList.Count;
             m_PaginationElement.GoToLastPage();
@@ -266,6 +277,7 @@ namespace Unity.Properties.UI.Internal
                     list.RemoveAt(index);
                     break;
             }
+
             Root.NotifyChanged(Path);
 
             m_PaginationElement.TotalCount = typedIList.Count;
@@ -275,7 +287,7 @@ namespace Unity.Properties.UI.Internal
         void Swap(int index, int newIndex)
         {
             var iList = GetValue();
-            if (null == iList) 
+            if (null == iList)
                 return;
 
             var temp = iList[index];
@@ -294,7 +306,7 @@ namespace Unity.Properties.UI.Internal
                 {
                     return;
                 }
-                
+
                 if (!Path[index].Equals(propertyPath[index]))
                 {
                     return;
@@ -311,10 +323,10 @@ namespace Unity.Properties.UI.Internal
             {
                 itemIndex -= m_PaginationElement.StartIndex;
             }
-            
+
             var current = m_ContentRoot[itemIndex];
-            current.Q<Button>(className:UssClasses.ListElement.RemoveItemButton)?.RemoveFromHierarchy();
-            
+            current.Q<Button>(className: UssClasses.ListElement.RemoveItemButton)?.RemoveFromHierarchy();
+
             MakeListElement(current, itemIndex);
         }
 

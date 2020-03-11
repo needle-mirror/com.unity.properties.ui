@@ -6,7 +6,7 @@ namespace Unity.Properties.UI
     /// Tag a field or a property to try to create a new instance if it is null.
     /// </summary>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
-    public class CreateInstanceOnInspectionAttribute : Attribute
+    public class CreateInstanceOnInspectionAttribute : InspectorAttribute
     {
         /// <summary>
         /// Returns the type of the instance that should be instantiated.

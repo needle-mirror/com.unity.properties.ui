@@ -6,7 +6,7 @@ namespace Unity.Properties.UI
     /// Allows to configure how the UI hierarchy is generated.
     /// </summary>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
-    public class InspectorOptionsAttribute : Attribute
+    public class InspectorOptionsAttribute : InspectorAttribute
     {
         /// <summary>
         /// Suppresses the "Reset to default" context menu item.

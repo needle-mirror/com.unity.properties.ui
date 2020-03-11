@@ -36,10 +36,11 @@ namespace Unity.Properties.UI.Internal
             public static readonly UITemplate ListElementDefaultStyling = new UITemplate("list-element-default");
             public static readonly UITemplate PaginationElement = new UITemplate("pagination-element");
             public static readonly UITemplate DictionaryElement = new UITemplate("dictionary-element");
-            public static readonly UITemplate AddDictionaryKey = new UITemplate("add-dictionary-key");
+            public static readonly UITemplate AddCollectionItem = new UITemplate("add-collection-item");
             public static readonly UITemplate SetElement = new UITemplate("set-element");
             public static readonly UITemplate SetElementDefaultStyling = new UITemplate("set-element-default");
             public static readonly UITemplate CircularReference = new UITemplate("circular-reference");
+            public static readonly UITemplate LazyLoadReference = new UITemplate("lazy-load-reference");
         }
     }
 }

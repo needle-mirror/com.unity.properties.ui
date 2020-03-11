@@ -33,7 +33,7 @@ namespace Unity.Properties.UI.Internal
                 button.clickable.clicked += ReloadWithFirstType;
                 if (property.IsReadOnly)
                 {
-                    button.SetEnabled(false);
+                    button.SetEnabledSmart(false);
                 }
                 return;
             }
@@ -48,7 +48,7 @@ namespace Unity.Properties.UI.Internal
             if (property.IsReadOnly)
             {
                 typeSelector.pickingMode = PickingMode.Ignore;
-                typeSelector.Q(className: UssClasses.Unity.BasePopupFieldInput).SetEnabled(false);
+                typeSelector.Q(className: UssClasses.Unity.BasePopupFieldInput).SetEnabledSmart(false);
             }
 
             Add(typeSelector);

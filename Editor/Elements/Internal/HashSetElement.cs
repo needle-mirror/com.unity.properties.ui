@@ -32,7 +32,8 @@ namespace Unity.Properties.UI.Internal
             {
                 m_Reload = reload;
                 (this as IBindable).binding = this;
-                Resources.Templates.AddDictionaryKey.Clone(this);
+                AddToClassList(UssClasses.Variables);
+                Resources.Templates.AddCollectionItem.Clone(this);
                 m_ShowAddKeyContainerButton = this.Q<Button>(className: UssClasses.AddKeyDictionaryElement.ShowContainerButton);
                 m_ShowAddKeyContainerButton.clickable.clicked += ShowContainer;
                 m_AddValueContainer = this.Q<VisualElement>(className: UssClasses.AddKeyDictionaryElement.Container);
@@ -86,18 +87,18 @@ namespace Unity.Properties.UI.Internal
                 {
                     m_ErrorIcon.tooltip = NoNullKeysTooltip;
                     m_ErrorIcon.Show();
-                    m_AddValueToSetButton.SetEnabled(false);
+                    m_AddValueToSetButton.SetEnabledSmart(false);
                 }
                 else if (m_Set.Contains(target.Value))
                 {
                     m_ErrorIcon.tooltip = KeyAlreadyExistsTooltip;
                     m_ErrorIcon.Show();
-                    m_AddValueToSetButton.SetEnabled(false);
+                    m_AddValueToSetButton.SetEnabledSmart(false);
                 }
                 else
                 {
                     m_ErrorIcon.Hide();
-                    m_AddValueToSetButton.SetEnabled(true);
+                    m_AddValueToSetButton.SetEnabledSmart(true);
                 }
             }
 
@@ -199,14 +200,14 @@ namespace Unity.Properties.UI.Internal
                     
                     toRemoveParent = toggle;
                     foldout.contentContainer.AddToClassList(UssClasses.SetElement.ItemContent);
-                    foldout.contentContainer.SetEnabled(false);
+                    foldout.contentContainer.SetEnabledSmart(false);
                 }
                 else
                 {
                     toRemoveParent = root;
                     contextMenuParent = root.Q<Label>();
                     element.AddToClassList(UssClasses.SetElement.ItemNoFoldout);
-                    element.contentContainer.SetEnabled(false);
+                    element.contentContainer.SetEnabledSmart(false);
                     root.style.flexDirection = FlexDirection.Row;
                 }
                 

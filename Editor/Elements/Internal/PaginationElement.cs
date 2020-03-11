@@ -97,8 +97,8 @@ namespace Unity.Properties.UI.Internal
 
         void Callback(FocusOutEvent evt)
         {
-            m_RangeInputRoot.style.display = DisplayStyle.None;
-            m_RangeButton.style.display = DisplayStyle.Flex;
+            m_RangeInputRoot.Hide();;
+            m_RangeButton.Show();
         }
 
         void OnIndexSelected(ChangeEvent<int> evt)
@@ -116,15 +116,15 @@ namespace Unity.Properties.UI.Internal
                 GoToPage(evt.newValue / PaginationSize);
             }
 
-            m_RangeInputRoot.style.display = DisplayStyle.None;
-            m_RangeButton.style.display = DisplayStyle.Flex;
+            m_RangeInputRoot.Hide();
+            m_RangeButton.Show();
         }
 
         void OnRangeClicked()
         {
             m_RangeButton.style.display = DisplayStyle.None;
             m_RangeInput.SetValueWithoutNotify(StartIndex + 1);
-            m_RangeInputRoot.style.display = DisplayStyle.Flex;
+            m_RangeInputRoot.Show();
             m_RangeInput.Q(className: UssClasses.Unity.BaseFieldInput).Focus();
         }
 
@@ -202,8 +202,8 @@ namespace Unity.Properties.UI.Internal
 
             RebindRange();
             m_SizeElement.SetValueWithoutNotify(PaginationSize);
-            m_PreviousButton.SetEnabled(CurrentPage != FirstPage);
-            m_NextButton.SetEnabled(CurrentPage != LastPage && LastPage >= 0);
+            m_PreviousButton.SetEnabledSmart(CurrentPage != FirstPage);
+            m_NextButton.SetEnabledSmart(CurrentPage != LastPage && LastPage >= 0);
         }
 
         void RebindRange()
