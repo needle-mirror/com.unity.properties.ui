@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.1.1] - 2020-03-20
+### Fixed
+* Fix `AttributeFilter` incorrectly being called on the internal property wrapper.
+
+### Changed
+* Update `com.unity.properties` to version `1.1.1-preview`.
+* Update `com.unity.serialization` to version `1.1.1-preview`.
+
 ## [1.1.0] - 2020-03-11
 ### Fixed
 * Fixed background color not being used when adding new collection items.

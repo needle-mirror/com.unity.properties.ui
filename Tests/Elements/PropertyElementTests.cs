@@ -20,13 +20,17 @@ namespace Unity.Properties.UI.Tests
         {
         }
         
+        class ShowAttribute : Attribute
+        {
+        }
+
         class FilterByAttribute
         {       
 
             [Hide] public int Int;
             [Hide] public string String = "";
             [Hide] public double Double;
-            public float Float;
+            [Show] public float Float;
 
         }
 
@@ -259,7 +263,7 @@ namespace Unity.Properties.UI.Tests
         }
 
         [Test]
-        public void PropertyElement_WithAttributeFilter_FiltersHierarchyGeneration()
+        public void PropertyElement_WithAttributeFilter_ExcludeFromHierarchyGeneration()
         {
             var element = new PropertyElement();
             element.SetTarget(new FilterByAttribute());
@@ -270,6 +274,23 @@ namespace Unity.Properties.UI.Tests
             Assert.That(element[3], Is.InstanceOf<FloatField>());
             
             element.SetAttributeFilter(attributes => null == attributes.OfType<HideAttribute>().FirstOrDefault());
+            
+            Assert.That(element.contentContainer.childCount, Is.EqualTo(1));
+            Assert.That(element[0], Is.InstanceOf<FloatField>());
+        }
+        
+        [Test]
+        public void PropertyElement_WithAttributeFilter_IncludeInHierarchyGeneration()
+        {
+            var element = new PropertyElement();
+            element.SetTarget(new FilterByAttribute());
+            Assert.That(element.contentContainer.childCount, Is.EqualTo(4));
+            Assert.That(element[0], Is.InstanceOf<IntegerField>());
+            Assert.That(element[1], Is.InstanceOf<TextField>());
+            Assert.That(element[2], Is.InstanceOf<DoubleField>());
+            Assert.That(element[3], Is.InstanceOf<FloatField>());
+            
+            element.SetAttributeFilter(attributes => null != attributes.OfType<ShowAttribute>().FirstOrDefault());
             
             Assert.That(element.contentContainer.childCount, Is.EqualTo(1));
             Assert.That(element[0], Is.InstanceOf<FloatField>());

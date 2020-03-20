@@ -93,7 +93,7 @@ namespace Unity.Properties.UI.Internal
             ref TContainer container, ref TValue value)
         {
             var shouldShow = true;
-            if (null != VisitorContext.Root.m_AttributeFilter)
+            if (null != VisitorContext.Root.m_AttributeFilter && !(property is IPropertyWrapper))
             {
                 shouldShow = VisitorContext.Root.m_AttributeFilter(property.GetAttributes());
             }
