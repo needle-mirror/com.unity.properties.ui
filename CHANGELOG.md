@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.2.0] - 2020-04-03
+### Changed
+* Update `com.unity.properties` to version `1.2.0-preview`.
+* Update `com.unity.serialization` to version `1.2.0-preview`.
+
 ## [1.1.1] - 2020-03-20
 ### Fixed
 * Fix `AttributeFilter` incorrectly being called on the internal property wrapper.
