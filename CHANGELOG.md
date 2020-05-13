@@ -1,6 +1,26 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.3.0] - 2020-05-13
+## Added
+* Added support for using "." in `uxml` files to refer to the value being inspected in a custom inspector.
+* Added support for automatically nesting `PropertyElement` using `bindingPath`.
+* Added support for passing an inspection context to a ' PropertyElement'.
+* Added overloads to `Inspector<TValue>.DoDefaultGUI[...]` to use the default drawer for a given property path, index or key.
+* Added support for creating array instances. 
+
+### Changed
+* Update `com.unity.properties` to version `1.3.0-preview`.
+* Update `com.unity.serialization` to version `1.3.0-preview`.
+
+## Fixed
+* Fixed specifying nested paths (i.e.: binding-path="path.to.field") in custom inspectors.
+* Fixed binding to `UnityEngine.UIElements.Label` requiring a type converter to be registered.
+* Fixed single line list items not shrinking properly.
+* Fixed stack overflow issues that could happen when calling `DoDefaultGui()`.
+* Fixed displaying type names for nested generic types.
+* Fixed array fields not being editable.
+
 ## [1.2.0] - 2020-04-03
 ### Changed
 * Update `com.unity.properties` to version `1.2.0-preview`.

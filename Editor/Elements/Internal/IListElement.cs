@@ -57,7 +57,8 @@ namespace Unity.Properties.UI.Internal
         public override void OnContextReady()
         {
             var list = GetValue();
-            if (list.IsReadOnly)
+            var property = GetProperty();
+            if (property.IsReadOnly && list.IsReadOnly)
             {
                 m_Size.SetEnabledSmart(false);
                 m_AddItemButton.SetEnabledSmart(false);
@@ -117,21 +118,32 @@ namespace Unity.Properties.UI.Internal
                 endIndex = m_PaginationElement.EndIndex;
             }
 
-            for (var i = startIndex; i < endIndex; ++i)
+            var atIndexPath = PropertyPath.Pool.Get();
+            try
             {
-                var index = i;
-                Path.PushIndex(index);
-                try
+                atIndexPath.PushPath(Path);
+
+                for (var i = startIndex; i < endIndex; ++i)
                 {
-                    var root = new VisualElement();
-                    Root.VisitAtPath(Path, root);
-                    MakeListElement(root, index);
-                    m_ContentRoot.Add(root);
+                    var index = i;
+
+                    atIndexPath.PushIndex(index);
+                    try
+                    {
+                        var root = new VisualElement();
+                        Root.VisitAtPath(atIndexPath, root);
+                        MakeListElement(root, index);
+                        m_ContentRoot.Add(root);
+                    }
+                    finally
+                    {
+                        atIndexPath.Pop();
+                    }
                 }
-                finally
-                {
-                    Path.Pop();
-                }
+            }
+            finally
+            {
+                PropertyPath.Pool.Release(atIndexPath);
             }
         }
 
@@ -362,12 +374,16 @@ namespace Unity.Properties.UI.Internal
                 root.style.flexDirection = FlexDirection.Row;
             }
 
+            var list = GetValue();
+            var property = GetProperty();
+            var disableRemove = property.IsReadOnly && list.IsReadOnly;
+
             contextMenuParent.AddManipulator(
                 new ContextualMenuManipulator(evt =>
                 {
-                    var list = GetValue();
                     evt.menu.AppendSeparator();
-                    evt.menu.AppendAction("Delete", action => { OnRemoveItem(index); });
+                    evt.menu.AppendAction("Delete", action => { OnRemoveItem(index); },
+                        disableRemove ? DropdownMenuAction.Status.Disabled : DropdownMenuAction.Status.Normal);
                     evt.menu.AppendSeparator();
                     evt.menu.AppendAction("Move Up", action => { Swap(index, index - 1); },
                         list.Count > 1 && index - 1 >= 0
@@ -379,9 +395,11 @@ namespace Unity.Properties.UI.Internal
                             : DropdownMenuAction.Status.Disabled);
                 }));
 
+
             var button = new Button();
             button.AddToClassList(UssClasses.ListElement.RemoveItemButton);
             button.clickable.clicked += () => { OnRemoveItem(index); };
+            button.SetEnabledSmart(!disableRemove);
             toRemoveParent.Add(button);
         }
     }

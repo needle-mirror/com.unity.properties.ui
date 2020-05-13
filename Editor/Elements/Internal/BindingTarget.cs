@@ -53,6 +53,12 @@ namespace Unity.Properties.UI.Internal
 
         public void RegisterBindings(PropertyPath path, VisualElement element)
         {
+            if (path.Empty)
+            {
+                BindingUtilities.Bind(element, ref m_Target, path, Root);
+                return;
+            }
+
             m_BindingVisitor.Reset();
             m_BindingVisitor.Path = path;
             m_BindingVisitor.Root = Root;

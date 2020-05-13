@@ -30,8 +30,8 @@ namespace Unity.Properties.UI.Internal
             => ConstructFoldout<DictionaryElement<TDictionary, TKey, TValue>>(
                 property, path, visitorContext);
 
-        public static HashSetElement<TSet, TElement> SetFoldout<TContainer, TSet, TElement>(
-            IProperty<TContainer> property,
+        public static HashSetElement<TSet, TElement> SetFoldout<TSet, TElement>(
+            IProperty property,
             PropertyPath path,
             InspectorVisitorContext visitorContext)
             where TSet : ISet<TElement>
@@ -349,10 +349,22 @@ namespace Unity.Properties.UI.Internal
                 if (!Root.TryGetValue<TValue>(Path, out var value))
                     return;
 
-                if (!TypeConversion.TryConvert(value, out string strValue))
-                    return;
+                Element.text = TypeConversion.TryConvert(value, out string strValue) ? strValue : value.ToString();
+            }
+        }
 
-                Element.text = strValue;
+        class PropertyBinding<TValue> : UIBinding<PropertyElement, TValue>
+        {
+            public PropertyBinding(PropertyElement element, PropertyElement root, PropertyPath path) : base(element, root, path)
+            {
+            }
+
+            public override void Update()
+            {
+                if (!Root.TryGetValue<TValue>(Path, out var value))
+                    return;
+                
+                Element.SetTarget(value);
             }
         }
         
@@ -396,6 +408,28 @@ namespace Unity.Properties.UI.Internal
             visitorContext.Parent.contentContainer.Add(element);
             return element;
         }
+        
+        internal static void SetCallbacks<TValue>(
+            ref TValue value,
+            PropertyPath path,
+            PropertyElement root,
+            PropertyElement field)
+        {
+            field.SetTarget(value);
+            field.binding = new PropertyBinding<TValue>(field, root, path);
+
+            var r = root;
+            var p = path;
+            field.OnChanged += (element, propertyPath) =>
+            {
+                r.SetValue(p, element.GetTarget<TValue>());
+                element.SetTarget(r.GetValue<TValue>(p));
+                var fullPath = new PropertyPath();
+                fullPath.PushPath(p);
+                fullPath.PushPath(propertyPath);
+                r.NotifyChanged(fullPath);
+            };
+        }
 
         internal static void SetCallbacks<TFieldType, TValue>(
             ref TValue value,
@@ -431,10 +465,7 @@ namespace Unity.Properties.UI.Internal
             PropertyElement root,
             Label label)
         {
-            if (!TypeConversion.TryConvert(value, out string strValue)) 
-                return;
-            
-            label.text = strValue;
+            label.text = TypeConversion.TryConvert(value, out string strValue) ? strValue : value.ToString();
             label.binding = new LabelBinding<TValue>(label, root, path);
         }
 

@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using UnityEditor;
+using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI.Tests
 {
@@ -60,6 +61,11 @@ namespace Unity.Properties.UI.Tests
             p.PushKey(key);
             p.PushName("Value");
             return p;
+        }
+
+        protected void UpdateBindables()
+        {
+            Element.Query<BindableElement>().ForEach(e => e.binding?.Update());
         }
         
         class TestWindow : EditorWindow

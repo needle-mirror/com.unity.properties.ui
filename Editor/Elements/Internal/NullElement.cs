@@ -9,7 +9,7 @@ namespace Unity.Properties.UI.Internal
     class NullElement<T> : BindableElement, IBinding
     {
         abstract class Null{}
-        
+
         readonly PropertyElement m_Root;
         readonly PropertyPath m_Path;
         readonly List<Type> m_PotentialTypes;
@@ -24,6 +24,20 @@ namespace Unity.Properties.UI.Internal
             
             TypeConstruction.GetAllConstructableTypes<T>(m_PotentialTypes);
 
+            if (typeof(T).IsArray)
+            {
+                Resources.Templates.NullStringField.Clone(this);
+                this.Q<Label>().text = GuiFactory.GetDisplayName(property);
+                var button = this.Q<Button>();
+                button.text = $"Null ({GetTypeName(typeof(T))})";
+                button.clickable.clicked += ReloadWithArrayType;
+                if (property.IsReadOnly)
+                {
+                    button.SetEnabledSmart(false);
+                }
+                return;
+            }
+            
             if (m_PotentialTypes.Count == 2)
             {
                 Resources.Templates.NullStringField.Clone(this);
@@ -43,7 +57,7 @@ namespace Unity.Properties.UI.Internal
                 m_PotentialTypes,
                 typeof(Null),
                 GetTypeName,
-                TypeUtility.GetResolvedTypeName);
+                GetTypeName);
             typeSelector.RegisterValueChangedCallback(OnCreateItem);
             if (property.IsReadOnly)
             {
@@ -58,9 +72,9 @@ namespace Unity.Properties.UI.Internal
         {
             if (type == typeof(Null))
             {
-                return $"Null ({TypeUtility.GetResolvedTypeName(typeof(T))})";
+                return $"Null ({TypeUtility.GetTypeDisplayName(typeof(T))})";
             }
-            return TypeUtility.GetResolvedTypeName(type);
+            return TypeUtility.GetTypeDisplayName(type);
         }
 
         void IBinding.PreUpdate()
@@ -109,6 +123,11 @@ namespace Unity.Properties.UI.Internal
         void ReloadWithFirstType()
         {
             ReloadWithInstance(TypeConstruction.Construct<T>(m_PotentialTypes[1]));
+        }
+        
+        void ReloadWithArrayType()
+        {
+            ReloadWithInstance(TypeConstruction.ConstructArray<T>());
         }
 
         void ReloadWithInstance(T value)

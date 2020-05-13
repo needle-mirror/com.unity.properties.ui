@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using Unity.Properties.Editor;
 using Unity.Properties.Internal;
 using Unity.Properties.UI.Internal;
 using UnityEngine.UIElements;
@@ -12,20 +14,23 @@ namespace Unity.Properties.UI
     /// <typeparam name="T">The type of the value to inspect.</typeparam>
     public abstract class Inspector<T> : IInspector<T>
     {
-        CustomInspectorElement IInspector.Parent { get; set; }
-
         InspectorContext<T> IInspector<T>.Context { get; set; }
 
         IInspector<T> Internal => this;
 
         /// <summary>
-        /// Accessor to the value being inspected. 
+        /// Accessor to the value being inspected.
         /// </summary>
         protected T Target
         {
-            get => Internal.Context.Data;
+            get
+            {
+                EnsureValidContext();
+                return Internal.Context.Data;
+            }
             set
             {
+                EnsureValidContext();
                 var context = Internal.Context;
                 context.Data = value;
             }
@@ -34,41 +39,107 @@ namespace Unity.Properties.UI
         /// <summary>
         /// Returns the property name of the current value.
         /// </summary>
-        protected string Name => Internal.Context.Name;
-        
+        protected string Name
+        {
+            get
+            {
+                EnsureValidContext();
+                return Internal.Context.Name;
+            }
+        }
+
         /// <summary>
         /// Returns the property path of the current value.
         /// </summary>
-        public PropertyPath.Part Part => Internal.Context.Part;
-        
+        public PropertyPath.Part Part
+        {
+            get
+            {
+                EnsureValidContext();
+                return Internal.Context.Part;
+            }
+        }
+
         /// <summary>
         /// Returns the display name of the current value.
         /// </summary>
-        protected string DisplayName => Internal.Context.DisplayName;
-        
+        protected string DisplayName
+        {
+            get
+            {
+                EnsureValidContext();
+                return Internal.Context.DisplayName;
+            }
+        }
+
         /// <summary>
         /// Returns the tooltip of the current value.
         /// </summary>
-        protected string Tooltip => Internal.Context.Tooltip;
-        
+        protected string Tooltip
+        {
+            get
+            {
+                EnsureValidContext();
+                return Internal.Context.Tooltip;
+            }
+        }
+
         /// <summary>
         /// Returns <see langword="true"/> if the value field was tagged with the <see cref="UnityEngine.DelayedAttribute"/>.
         /// </summary>
-        protected bool IsDelayed => Internal.Context.IsDelayed;
-        
+        protected bool IsDelayed
+        {
+            get
+            {
+                EnsureValidContext();
+                return Internal.Context.IsDelayed;
+            }
+        }
+
         /// <summary>
         /// Returns the full property path of the current target.
         /// </summary>
-        public PropertyPath PropertyPath => Internal.Context.PropertyPath;
-        
-        PropertyPath BasePath => Internal.Context.BasePath;
-        List<Attribute> Attributes => Internal.Context.Attributes;
-        PropertyElement Root => Internal.Context.Root;
+        public PropertyPath PropertyPath
+        {
+            get
+            {
+                EnsureValidContext();
+                return Internal.Context.PropertyPath;
+            }
+        }
+
+        PropertyPath BasePath
+        {
+            get
+            {
+                EnsureValidContext();
+                return Internal.Context.BasePath;
+            }
+        }
+
+        List<Attribute> Attributes
+        {
+            get
+            {
+                EnsureValidContext();
+                return Internal.Context.Attributes;
+            }
+        }
+
+        PropertyElement Root
+        {
+            get
+            {
+                EnsureValidContext();
+                return Internal.Context.Root;
+            }
+        }
 
         /// <inheritdoc/>
         public bool HasAttribute<TAttribute>()
             where TAttribute : Attribute
         {
+            EnsureValidContext();
             for (var i = 0; i < Attributes?.Count; i++)
             {
                 if (Attributes[i] is TAttribute)
@@ -84,6 +155,7 @@ namespace Unity.Properties.UI
         public TAttribute GetAttribute<TAttribute>()
             where TAttribute : Attribute
         {
+            EnsureValidContext();
             for (var i = 0; i < Attributes?.Count; i++)
             {
                 if (Attributes[i] is TAttribute typed)
@@ -99,6 +171,7 @@ namespace Unity.Properties.UI
         public IEnumerable<TAttribute> GetAttributes<TAttribute>()
             where TAttribute : Attribute
         {
+            EnsureValidContext();
             for (var i = 0; i < Attributes?.Count; i++)
             {
                 if (Attributes[i] is TAttribute typed)
@@ -109,8 +182,25 @@ namespace Unity.Properties.UI
         }
 
         /// <inheritdoc/>
+        public TInspectionContext GetContext<TInspectionContext>(string contextName = null)
+            where TInspectionContext : InspectionContext
+        {
+            EnsureValidContext();
+            return Root.GetContext<TInspectionContext>(contextName);
+        }
+        
+        /// <inheritdoc/>
+        public bool HasContext<TInspectionContext>(string contextName = null)
+            where TInspectionContext : InspectionContext
+        {
+            EnsureValidContext();
+            return Root.HasContext<TInspectionContext>(contextName);
+        }
+        
+        /// <inheritdoc/>
         public virtual VisualElement Build()
         {
+            EnsureValidContext();
             return DoDefaultGui();
         }
 
@@ -122,38 +212,107 @@ namespace Unity.Properties.UI
         /// <inheritdoc/>
         public bool IsPathValid(PropertyPath path)
         {
-            var p = new PropertyPath();
-            p.PushPath(BasePath);
-            p.PushPath(path);
-            return Root.IsPathValid(p);
+            if (null == path)
+                throw new NullReferenceException(nameof(path));
+            
+            EnsureValidContext();
+            if (path.Empty && PropertyPath.Empty)
+                return true;
+            
+            var p = PropertyPath.Pool.Get();
+            try
+            {
+                p.PushPath(PropertyPath);
+                p.PushPath(path);
+                return Root.IsPathValid(p);
+            }
+            finally
+            {
+                PropertyPath.Pool.Release(p);
+            }
         }
         
         /// <inheritdoc/>
-        public Type Type => typeof(T);
-        
-        /// <summary>
-        /// Allows to register data-binding on <see cref="BindableElement"/> when `binding-path` is set. 
-        /// </summary>
-        /// <param name="path">The base <see cref="PropertyPath"/> to use with the <paramref name="element"/>.</param>
-        /// <param name="element">The root element we wish to bind.</param>
-        void IInspector.RegisterBindings(PropertyPath path, VisualElement element)
+        public Type Type
         {
-            Root.RegisterBindings(path, element);
+            get
+            {
+                EnsureValidContext();
+                return typeof(T);
+            }
         }
-       
+
         /// <summary>
         /// Allows to revert to the default drawing handler for a specific field.  
         /// </summary>
         /// <param name="parent">The parent element.</param>
-        /// <param name="name">The name of the field that needs to be drawn.</param>
-        public void DoDefaultGui(VisualElement parent, string name)
+        /// <param name="propertyPath">The property path to the field that needs to be drawn.</param>
+        public void DoDefaultGui(VisualElement parent, string propertyPath)
+            => DoDefaultGui(parent, new PropertyPath(propertyPath));
+
+        /// <summary>
+        /// Allows to revert to the default drawing handler for a specific property path.  
+        /// </summary>
+        /// <param name="parent">The parent element.</param>
+        /// <param name="propertyPath">The property path to the field that needs to be drawn.</param>
+        public void DoDefaultGui(VisualElement parent, PropertyPath propertyPath)
         {
-            var path = new PropertyPath();
-            path.PushPath(PropertyPath);
-            path.PushName(name);
-            Root.VisitAtPath(path, parent);
+            EnsureValidContext();
+            var path = PropertyPath.Pool.Get();
+            try
+            {
+                path.PushPath(PropertyPath);
+                path.PushPath(propertyPath);
+                Root.VisitAtPath(path, parent);
+            }
+            finally
+            {
+                PropertyPath.Pool.Release(path);
+            }
         }
 
+        /// <summary>
+        /// Allows to revert to the default drawing handler for a specific field.  
+        /// </summary>
+        /// <param name="parent">The parent element.</param>
+        /// <param name="index">The index of the field that needs to be drawn.</param>
+        public void DoDefaultGuiAtIndex(VisualElement parent, int index)
+        {
+            EnsureValidContext();
+            var path = PropertyPath.Pool.Get();
+            try
+            {
+                path.PushPath(PropertyPath);
+                path.PushIndex(index);
+                Root.VisitAtPath(path, parent);
+            }
+            finally
+            {
+                PropertyPath.Pool.Release(path);
+            }
+        }
+        
+        /// <summary>
+        /// Allows to revert to the default drawing handler for a specific field.  
+        /// </summary>
+        /// <param name="parent">The parent element.</param>
+        /// <param name="key">The key of the field that needs to be drawn.</param>
+        public void DoDefaultGuiAtKey<TKey>(VisualElement parent, TKey key)
+        {
+            EnsureValidContext();
+            var path = PropertyPath.Pool.Get();
+            try
+            {
+                path.PushPath(PropertyPath);
+                path.PushKey(key);
+                Root.VisitAtPath(path, parent);
+            }
+            finally
+            {
+                PropertyPath.Pool.Release(path);
+            }
+        }
+        
         /// <summary>
         /// Generates the default inspector.
         /// </summary>
@@ -161,7 +320,8 @@ namespace Unity.Properties.UI
         protected VisualElement DoDefaultGui()
         {
             var visitor = new InspectorVisitor<T>(Root, Target) {EnableRootCustomInspectors = false};
-            using (visitor.VisitorContext.MakeParentScope(Internal.Parent))
+            var root = new CustomInspectorElement.DefaultInspectorElement();
+            using (visitor.VisitorContext.MakeParentScope(root))
             {
                 visitor.AddToPath(PropertyPath);
                 if (PropertyPath.Empty)
@@ -172,14 +332,14 @@ namespace Unity.Properties.UI
                 else
                 {
                     if (!Root.TryGetProperty(PropertyPath, out var property))
-                        return Internal.Parent;
+                        return root;
                     
                     var value = Target;
-                    visitor.RecurseProperty(ref value, property, PropertyPath);
+                    visitor.DefaultPropertyVisit(property, ref value, PropertyPath);
                 }
             }
 
-            return Internal.Parent;
+            return root;
         }
 
         /// <summary>
@@ -191,7 +351,14 @@ namespace Unity.Properties.UI
         /// </remarks>
         protected void NotifyChanged()
         {
+            EnsureValidContext();
             Root.NotifyChanged(PropertyPath);
+        }
+        
+        void EnsureValidContext([CallerMemberName] string caller = "")
+        {
+            if (Internal.Context.Equals(default(InspectorContext<T>)))
+                throw new InvalidOperationException($"{TypeUtility.GetTypeDisplayName(typeof(Inspector<T>))}: Cannot call `{caller}` before the `{nameof(Build)}` method has been called.");    
         }
     }
 }

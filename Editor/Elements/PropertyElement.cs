@@ -14,14 +14,14 @@ namespace Unity.Properties.UI
         /// <summary>
         ///   <para>Instantiates a PropertyElement using the data read from a UXML file.</para>
         /// </summary>
-        class PropertyElementFactory : UnityEngine.UIElements.UxmlFactory<PropertyElement, PropertyElementTraits>
+        class PropertyElementFactory : UxmlFactory<PropertyElement, PropertyElementTraits>
         {
         }
 
         /// <summary>
         ///   <para>Defines UxmlTraits for the PropertyElement.</para>
         /// </summary>
-        class PropertyElementTraits : VisualElement.UxmlTraits
+        class PropertyElementTraits : UxmlTraits
         {
         }
         
@@ -48,7 +48,8 @@ namespace Unity.Properties.UI
         public event ChangeHandler OnChanged = delegate { };
 
         internal AttributeFilterHandler m_AttributeFilter;
-        
+        readonly List<InspectionContext> m_InspectionContexts = new List<InspectionContext>();
+
         IBindingTarget m_BindingTarget;
         
         /// <summary>
@@ -178,6 +179,63 @@ namespace Unity.Properties.UI
                 return;
             m_AttributeFilter = filter;
             ForceReload();
+        }
+        
+        /// <summary>
+        /// Adds an inspection context to this element.
+        /// </summary>
+        /// <param name="inspectionContext">The inspection context to add.</param>
+        /// <exception cref="NullReferenceException">The inspection context is <see langword="null"/>.</exception>
+        public void AddContext(InspectionContext inspectionContext)
+        {
+            if (null == inspectionContext)
+                throw new NullReferenceException(nameof(inspectionContext));
+            
+            m_InspectionContexts.Add(inspectionContext);
+            ForceReload();
+        }
+
+        /// <summary>
+        /// Removes an inspection context from this element.
+        /// </summary>
+        /// <param name="inspectionContext">The inspection context to add.</param>
+        /// <exception cref="NullReferenceException">The inspection context is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">The inspection context was not previously added.</exception>
+        public void RemoveContext(InspectionContext inspectionContext)
+        {
+            if (null == inspectionContext)
+                throw new NullReferenceException(nameof(inspectionContext));
+
+            if (!m_InspectionContexts.Remove(inspectionContext))
+                throw new ArgumentException(nameof(inspectionContext));
+            
+            ForceReload();
+        }
+
+        /// <summary>
+        /// Returns an inspection context of the given type. 
+        /// </summary>
+        /// <param name="contextName">The name of the inspection context.</param>
+        /// <typeparam name="T">The inspection context type.</typeparam>
+        /// <returns>The inspection context, if it exists.</returns>
+        public T GetContext<T>(string contextName = null)
+            where T : InspectionContext
+        {
+            return m_InspectionContexts.OfType<T>().FirstOrDefault(c => string.IsNullOrEmpty(contextName) || c.Name == contextName)
+                   ?? GetFirstAncestorOfType<PropertyElement>()?.GetContext<T>(contextName);
+        }
+        
+        /// <summary>
+        /// Returns <see langword="true"/> if an inspection context of the given type exists. 
+        /// </summary>
+        /// <param name="contextName">The name of the inspection context.</param>
+        /// <typeparam name="T">The inspection context type.</typeparam>
+        /// <returns><see langword="true"/>, if it exists.</returns>
+        public bool HasContext<T>(string contextName = null)
+            where T : InspectionContext
+        {
+            return m_InspectionContexts.OfType<T>().Any(c => string.IsNullOrEmpty(contextName) || c.Name == contextName)
+                   || (GetFirstAncestorOfType<PropertyElement>()?.HasContext<T>(contextName) ?? false);
         }
 
         /// <summary>

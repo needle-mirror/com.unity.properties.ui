@@ -9,102 +9,105 @@ namespace Unity.Properties.UI.Tests
     class CustomInspectorTests
     {
         static class Types
-    {
-        public class InspectorTestBase
         {
-            public float Float;
-            public int Int;
-            public string String;
-        }
-        
-        public class NoInspectorType : InspectorTestBase
-        {
-        }
-        
-        public class NullInspectorType : InspectorTestBase
-        {
-        }
-        
-        public class NullInspectorTypeInspector : Inspector<NullInspectorType>
-        {
-            public override VisualElement Build()
+            public class InspectorTestBase
             {
-                return null;
+                public float Float;
+                public int Int;
+                public string String;
             }
-        }
-        
-        public class DefaultInspectorType : InspectorTestBase
-        {
-        }
-        
-        public class DefaultInspectorTypeInspector : Inspector<DefaultInspectorType>
-        {
-            public override VisualElement Build()
+
+            public class NoInspectorType : InspectorTestBase
             {
-                return DoDefaultGui();
             }
-        }
-        
-        public class CodeInspectorType : InspectorTestBase
-        {
-            
-        }
-        
-        public class CodeInspectorTypeInspector: Inspector<CodeInspectorType>
-        {
-            FloatField Float;
-            IntegerField Int;
-            TextField String;
-            
-            public override VisualElement Build()
+
+            public class NullInspectorType : InspectorTestBase
             {
-                var root = new VisualElement();
-                root.Add(Float = new FloatField
-                {
-                    bindingPath = "Float"
-                });
-                
-                root.Add(Int = new IntegerField
-                {
-                    bindingPath = "Int"
-                });
-                
-                root.Add(String = new TextField
-                {
-                    bindingPath = "String"
-                });
-                return root;
             }
+
+            public class NullInspectorTypeInspector : Inspector<NullInspectorType>
+            {
+                public override VisualElement Build()
+                {
+                    return null;
+                }
+            }
+
+            public class DefaultInspectorType : InspectorTestBase
+            {
+            }
+
+            public class DefaultInspectorTypeInspector : Inspector<DefaultInspectorType>
+            {
+                public override VisualElement Build()
+                {
+                    var sneaky = new VisualElement();
+                    sneaky.Add(DoDefaultGui());
+                    return sneaky;
+                }
+            }
+
+            public class CodeInspectorType : InspectorTestBase
+            {
+
+            }
+
+            public class CodeInspectorTypeInspector : Inspector<CodeInspectorType>
+            {
+                FloatField Float;
+                IntegerField Int;
+                TextField String;
+
+                public override VisualElement Build()
+                {
+                    var root = new VisualElement();
+                    root.Add(Float = new FloatField
+                    {
+                        bindingPath = "Float"
+                    });
+
+                    root.Add(Int = new IntegerField
+                    {
+                        bindingPath = "Int"
+                    });
+
+                    root.Add(String = new TextField
+                    {
+                        bindingPath = "String"
+                    });
+                    return root;
+                }
+            }
+
+            public class AllDefaultInspectorType : InspectorTestBase
+            {
+                }
+
+            public class AllDefaultInspectorTypeInspector : Inspector<AllDefaultInspectorType>
+            {
+                public override VisualElement Build()
+                {
+                    var root = new VisualElement();
+                    DoDefaultGui(root, "Float");
+                    DoDefaultGui(root, "Int");
+                    DoDefaultGui(root, "String");
+                    return root;
+                }
+            }
+
+            public class NullFieldInspector
+            {
+                public NullInspectorType NullInspectorType;
+            }
+
+            public class DefaultFieldInspector
+            {
+                public NoInspectorType NoInspectorType;
+                public DefaultInspectorType DefaultInspectorType;
+            }
+           
         }
 
-        public class AllDefaultInspectorType : InspectorTestBase
-        {
-        }
-        
-        public class AllDefaultInspectorTypeInspector : Inspector<AllDefaultInspectorType>
-        {
-            public override VisualElement Build()
-            {
-                var root = new VisualElement();
-                DoDefaultGui(root, "Float");
-                DoDefaultGui(root, "Int");
-                DoDefaultGui(root, "String");
-                return root;
-            }
-        }
-        
-        public class NullFieldInspector
-        {
-            public NullInspectorType NullInspectorType;
-        }
-        
-        public class DefaultFieldInspector
-        {
-            public NoInspectorType NoInspectorType;
-            public DefaultInspectorType DefaultInspectorType;
-        }
-    }
-        
         [Test]
         public void NullInspector_ForRootType_HasNoChildren()
         {
@@ -143,7 +146,7 @@ namespace Unity.Properties.UI.Tests
             defaultInspector.SetTarget(new Types.DefaultInspectorType());
             var customInspectorElements = defaultInspector.Query<CustomInspectorElement>().ToList(); 
             Assert.That(customInspectorElements.Count, Is.EqualTo(1));
-            var customInspectorElement = customInspectorElements[0]; 
+            var customInspectorElement = customInspectorElements[0].Q<CustomInspectorElement.DefaultInspectorElement>(); 
             Assert.That(customInspectorElement.childCount, Is.EqualTo(3));
 
             for (var i = 0; i < 3; ++i)
@@ -212,7 +215,7 @@ namespace Unity.Properties.UI.Tests
         }
 
         [Test]
-        public void CodeInspector_WithBindings_GetsValuesSet()
+        public void CustomInspector_WithBindings_GetsValuesSet()
         {
             var fieldInspector = new PropertyElement();
             fieldInspector.SetTarget(new Types.CodeInspectorType()

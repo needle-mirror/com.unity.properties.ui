@@ -4,6 +4,8 @@ namespace Unity.Properties.UI.Internal
 {
     class CustomInspectorVisitor<TDeclaredValueType> : ConcreteTypeVisitor
     {
+        public static readonly Pool<CustomInspectorVisitor<TDeclaredValueType>> Pool = new Pool<CustomInspectorVisitor<TDeclaredValueType>>(() => new CustomInspectorVisitor<TDeclaredValueType>(), v => v.Reset());
+        
         public IInspector Inspector { get; private set; }
         public PropertyElement Root { get; set; }
         public PropertyPath PropertyPath { get; set; }
@@ -12,6 +14,14 @@ namespace Unity.Properties.UI.Internal
         protected override void VisitContainer<TValue>(ref TValue value)
         {
             Inspector = GetInspector<TValue>() ?? GetInspector<TDeclaredValueType>();
+        }
+
+        void Reset()
+        {
+            Inspector = null;
+            Root = null;
+            PropertyPath = null;
+            Property = null;
         }
 
         IInspector GetInspector<T>()

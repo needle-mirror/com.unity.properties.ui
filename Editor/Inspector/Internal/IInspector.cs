@@ -24,8 +24,6 @@ namespace Unity.Properties.UI.Internal
         /// <returns><see langword="true"/> if a property exists at the given path.</returns>
         bool IsPathValid(PropertyPath path);
 
-        CustomInspectorElement Parent { get; set; }
-        
         /// <summary>
         /// The property path from the root to this value.
         /// </summary>
@@ -61,8 +59,24 @@ namespace Unity.Properties.UI.Internal
         /// <returns>An <see cref="IEnumerable{TAttribute}"/> for all attributes of the given type.</returns>
         IEnumerable<TAttribute> GetAttributes<TAttribute>()
             where TAttribute : Attribute;
+
+        /// <summary>
+        /// Returns the first inspection context of the given type.
+        /// </summary>
+        /// <param name="contextName">The name of the inspection context.</param>
+        /// <typeparam name="TInspectionContext">The inspection context type to get.</typeparam>
+        /// <returns>The inspection content of the given type, if it exists.</returns>
+        TInspectionContext GetContext<TInspectionContext>(string contextName = null)
+            where TInspectionContext : InspectionContext;
         
-        void RegisterBindings(PropertyPath path, VisualElement element);
+        /// <summary>
+        /// Returns <see langword="true"/> if an inspection context of the given type exists.
+        /// </summary>
+        /// <param name="contextName">The name of the inspection context.</param>
+        /// <typeparam name="TInspectionContext">The inspection context type to get.</typeparam>
+        /// <returns><see langword="true"/>, if it exists.</returns>
+        bool HasContext<TInspectionContext>(string contextName = null)
+            where TInspectionContext : InspectionContext;
     }
     
     /// <summary>

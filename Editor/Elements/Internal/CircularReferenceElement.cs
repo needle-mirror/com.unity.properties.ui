@@ -1,4 +1,5 @@
 using System;
+using Unity.Properties.Editor;
 using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI.Internal
@@ -47,7 +48,7 @@ namespace Unity.Properties.UI.Internal
                             : DropdownMenuAction.Status.Normal);
                 }));
             
-            this.Q<Button>(className: UssClasses.CircularReferenceElement.Path).text = "ref: " + pathToReference + $" ({TypeUtility.GetResolvedTypeName(value.GetType())})";
+            this.Q<Button>(className: UssClasses.CircularReferenceElement.Path).text = "ref: " + pathToReference + $" ({TypeUtility.GetTypeDisplayName(value.GetType())})";
             this.Q(className: UssClasses.CircularReferenceElement.Icon).tooltip = $"Circular reference found for path: `{pathToReference}`";
             
             RegisterCallback<MouseEnterEvent>(OnEnter);

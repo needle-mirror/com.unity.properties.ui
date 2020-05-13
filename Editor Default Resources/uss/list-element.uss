@@ -30,6 +30,7 @@
 .unity-properties__list-element__item-no-foldout
 {
   flex-grow: 1;
+  flex-shrink: 1;
 }
 
 .unity-properties__list-element__item-foldout

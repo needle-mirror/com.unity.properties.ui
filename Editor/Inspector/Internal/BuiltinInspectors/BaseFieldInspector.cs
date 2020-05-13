@@ -14,7 +14,7 @@ namespace Unity.Properties.UI.Internal
                 name = Name,
                 label = DisplayName,
                 tooltip = Tooltip,
-                bindingPath = Part.ToString()
+                bindingPath = "."
             };
             return m_Field;
         }
