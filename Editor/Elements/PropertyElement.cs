@@ -51,6 +51,7 @@ namespace Unity.Properties.UI
         readonly List<InspectionContext> m_InspectionContexts = new List<InspectionContext>();
 
         IBindingTarget m_BindingTarget;
+        PropertyElement m_Root;
         
         /// <summary>
         /// Constructs an instance of <see cref="PropertyElement"/>.
@@ -222,6 +223,7 @@ namespace Unity.Properties.UI
             where T : InspectionContext
         {
             return m_InspectionContexts.OfType<T>().FirstOrDefault(c => string.IsNullOrEmpty(contextName) || c.Name == contextName)
+                   ?? m_Root?.GetContext<T>()
                    ?? GetFirstAncestorOfType<PropertyElement>()?.GetContext<T>(contextName);
         }
         
@@ -319,6 +321,11 @@ namespace Unity.Properties.UI
         {
             m_BindingTarget?.VisitAtPath(path, localRoot);
         }
+        
+        internal void VisitAtPath<T>(PropertyPath path, VisualElement localRoot, InspectorVisitor<T> visitor)
+        {
+            m_BindingTarget?.VisitAtPath(path, localRoot, visitor);
+        }
 
         internal void RegisterBindings(PropertyPath path, VisualElement element)
         {
@@ -374,6 +381,11 @@ namespace Unity.Properties.UI
             {
                 element.Q<Toggle>().RemoveFromClassList(UssClasses.Highlight);
             }
+        }
+
+        internal void SetRoot(PropertyElement root)
+        {
+            m_Root = root;
         }
     }
 }

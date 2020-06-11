@@ -12,7 +12,10 @@ namespace Unity.Properties.UI.Internal
         , Unity.Properties.Adapters.Contravariant.IVisit<UnityEngine.Object>
     {
         bool NoReentrace = false;
-        delegate TElement DrawHandler<TContainer, TValue, out TElement>(
+
+        bool AllowInspector => !NoReentrace && Visitor.EnableRootCustomInspectors; 
+
+            delegate TElement DrawHandler<TContainer, TValue, out TElement>(
             IProperty<TContainer> property,
             ref TValue value,
             PropertyPath path,
@@ -72,7 +75,7 @@ namespace Unity.Properties.UI.Internal
             {
                 var path = Visitor.GetCurrentPath();
                 
-                var inspector = NoReentrace ? null : GetPropertyDrawer<TValue>(property, Visitor.VisitorContext.Root, path);
+                var inspector = AllowInspector ? GetPropertyDrawer<TValue>(property, Visitor.VisitorContext.Root, path) : null;
                 NoReentrace = true;
                 if (null == inspector)
                 {
@@ -80,7 +83,8 @@ namespace Unity.Properties.UI.Internal
                 }
                 else
                 {
-                    Visitor.VisitorContext.Parent.contentContainer.Add(new CustomInspectorElement(path, inspector, Visitor.VisitorContext.Root));
+                    var customInspector = new CustomInspectorElement(path, inspector, Visitor.VisitorContext.Root);
+                    Visitor.VisitorContext.Parent.contentContainer.Add(customInspector);
                 }
             }
             finally
@@ -105,6 +109,21 @@ namespace Unity.Properties.UI.Internal
             }
             return drawer;
         }
+        
+        static IInspector<TValue> GetInspector<TValue>(IProperty property, PropertyElement root, PropertyPath propertyPath)
+        {
+            var inspector = CustomInspectorDatabase.GetBestInspectorType<TValue>(property);
+            if (null != inspector)
+            {
+                inspector.Context = new InspectorContext<TValue>(
+                    root,
+                    propertyPath,
+                    property,
+                    property.GetAttributes()
+                );
+            }
+            return inspector;
+        }
 
         public VisitStatus Visit<TContainer>(IProperty<TContainer> property, ref TContainer container,
             Object value)
@@ -114,40 +133,30 @@ namespace Unity.Properties.UI.Internal
             ref TValue value)
         {
             if (RuntimeTypeInfoCache<TValue>.IsEnum)
-                return RuntimeTypeInfoCache<TValue>.IsEnumFlags
-                    ? VisitPrimitive(property, ref value, GuiFactory.FlagsField)
-                    : VisitPrimitive(property, ref value, GuiFactory.EnumField);
-            
-            if (RuntimeTypeInfoCache<TValue>.IsLazyLoadReference)
             {
                 Visitor.AddToPath(property);
                 try
                 {
                     var path = Visitor.GetCurrentPath();
-                    var inspector = CustomInspectorDatabase.GetBestInspectorType<TValue>(property);
-                    if (null == inspector)
+                    var inspector = AllowInspector ? GetInspector<TValue>(property, VisitorContext.Root, path) : null;
+                    NoReentrace = true;
+                    if (null != inspector)
                     {
-                        var assetType = typeof(TValue).GetGenericArguments()[0];
-                        var inspectorType = typeof(LazyLoadReferenceInspector<>).MakeGenericType(assetType);
-                        inspector = (Inspector<TValue>) Activator.CreateInstance(inspectorType);
+                        var customInspector = new CustomInspectorElement(path, inspector, Visitor.VisitorContext.Root);
+                        Visitor.VisitorContext.Parent.contentContainer.Add(customInspector);
+                        return VisitStatus.Stop;
                     }
-                    inspector.Context = new InspectorContext<TValue>(
-                        Visitor.VisitorContext.Root,
-                        path,
-                        property,
-                        property.GetAttributes()
-                    );
-                    Visitor.VisitorContext.Parent.contentContainer.Add(
-                        new CustomInspectorElement(path, inspector, Visitor.VisitorContext.Root));
                 }
                 finally
                 {
+                    NoReentrace = false;
                     Visitor.RemoveFromPath(property);
                 }
 
-                return VisitStatus.Stop;
+                return RuntimeTypeInfoCache<TValue>.IsEnumFlags
+                    ? VisitPrimitive(property, ref value, GuiFactory.FlagsField)
+                    : VisitPrimitive(property, ref value, GuiFactory.EnumField);
             }
-            
             return VisitStatus.Unhandled;
         }
     }

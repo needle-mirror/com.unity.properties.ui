@@ -240,7 +240,7 @@ namespace Unity.Properties.UI.Internal
 
         IInspector GetCustomInspector<TDeclaredValue>(ref TDeclaredValue value, PropertyPath path, IProperty property)
         {
-            if (path.Empty && !EnableRootCustomInspectors) 
+            if (!EnableRootCustomInspectors) 
                 return null;
             
             var visitor = CustomInspectorVisitor<TDeclaredValue>.Pool.Get();

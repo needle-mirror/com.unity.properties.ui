@@ -201,7 +201,8 @@ namespace Unity.Properties.UI.Internal
             }
 
             RebindRange();
-            m_SizeElement.SetValueWithoutNotify(PaginationSize);
+            if (m_SizeElement.value != PaginationSize)
+                m_SizeElement.SetValueWithoutNotify(PaginationSize);
             m_PreviousButton.SetEnabledSmart(CurrentPage != FirstPage);
             m_NextButton.SetEnabledSmart(CurrentPage != LastPage && LastPage >= 0);
         }

@@ -312,7 +312,7 @@ namespace Unity.Properties.UI
                 PropertyPath.Pool.Release(path);
             }
         }
-        
+
         /// <summary>
         /// Generates the default inspector.
         /// </summary>
@@ -321,22 +321,18 @@ namespace Unity.Properties.UI
         {
             var visitor = new InspectorVisitor<T>(Root, Target) {EnableRootCustomInspectors = false};
             var root = new CustomInspectorElement.DefaultInspectorElement();
-            using (visitor.VisitorContext.MakeParentScope(root))
+            if (PropertyPath.Empty)
             {
-                visitor.AddToPath(PropertyPath);
-                if (PropertyPath.Empty)
+                using (visitor.VisitorContext.MakeParentScope(root))
                 {
+                    visitor.AddToPath(PropertyPath);
                     var wrapper = new PropertyWrapper<T>(Target);
                     PropertyContainer.Visit(ref wrapper, visitor);
                 }
-                else
-                {
-                    if (!Root.TryGetProperty(PropertyPath, out var property))
-                        return root;
-                    
-                    var value = Target;
-                    visitor.DefaultPropertyVisit(property, ref value, PropertyPath);
-                }
+            }
+            else
+            {
+                Root.VisitAtPath(PropertyPath, root, visitor);
             }
 
             return root;

@@ -13,6 +13,7 @@ namespace Unity.Properties.UI.Internal
         bool IsPathValid(PropertyPath path);
         void RegisterBindings(PropertyPath path, VisualElement element);
         void VisitAtPath(PropertyPath path, VisualElement parent);
+        void VisitAtPath<T>(PropertyPath path, VisualElement parent, InspectorVisitor<T> visitor);
         void SetAtPath<TValue>(PropertyPath path, TValue value);
         bool TrySetAtPath<TValue>(PropertyPath path, TValue value);
         TValue GetAtPath<TValue>(PropertyPath path);

@@ -1,3 +1,5 @@
+#pragma warning disable 649
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -105,7 +107,79 @@ namespace Unity.Properties.UI.Tests
                 public NoInspectorType NoInspectorType;
                 public DefaultInspectorType DefaultInspectorType;
             }
-           
+
+            public enum MyEnumCustom
+            {
+                Zero, One
+            }
+
+            class MyEnumCustomInspector : Inspector<MyEnumCustom>
+            {
+                public override VisualElement Build()
+                {
+                    return new Label(Target.ToString()){ name = Name };
+                }
+            }
+            
+            public enum MyEnumDefault
+            {
+                Zero, One
+            }
+
+            class MyEnumDefaultInspector : Inspector<MyEnumDefault>
+            {
+            }
+            
+            public enum MyEnumNull
+            {
+                Zero, One
+            }
+
+            class MyEnumNullInspector : Inspector<MyEnumNull>
+            {
+                public override VisualElement Build()
+                {
+                    return null;
+                }
+            }
+
+            public class TypeWithEnum
+            {
+                public MyEnumCustom Custom;
+                public MyEnumDefault Default;
+                public MyEnumNull Null;
+            }
+            
+            public class TypeWithCollections
+            {
+                public List<MyEnumCustom> Custom = new List<MyEnumCustom>();
+                public List<MyEnumDefault> Default = new List<MyEnumDefault>();
+                public List<MyEnumNull> Null = new List<MyEnumNull>();
+            }
+            
+            class MyEnumCustomListInspector : Inspector<List<MyEnumCustom>>
+            {
+                public override VisualElement Build()
+                {
+                    return new Label(Target.ToString()){ name = Name };
+                }
+            }
+    
+            class MyEnumDefaultListInspector : Inspector<List<MyEnumDefault>>
+            {
+                public override VisualElement Build()
+                {
+                    return DoDefaultGui();
+                }
+            }
+    
+            class MyEnumNullListInspector : Inspector<List<MyEnumNull>>
+            {
+                public override VisualElement Build()
+                {
+                    return null;
+                }
+            }
         }
 
         [Test]
@@ -190,6 +264,34 @@ namespace Unity.Properties.UI.Tests
         }
         
         [Test]
+        public void DefaultInspector_ForEnumField_MimicsGenericInspector()
+        {
+            var fieldInspector = new PropertyElement();
+            fieldInspector.SetTarget(new Types.TypeWithEnum());
+
+            var customInspectorElements = fieldInspector.Query<CustomInspectorElement>().ToList(); 
+            Assert.That(customInspectorElements[0].childCount, Is.EqualTo(1));
+            Assert.That(customInspectorElements[0][0], Is.TypeOf<Label>());
+            Assert.That(customInspectorElements[1].childCount, Is.EqualTo(1));
+            Assert.That(customInspectorElements[1][0], Is.TypeOf<CustomInspectorElement.DefaultInspectorElement>());
+            Assert.That(customInspectorElements[2].childCount, Is.EqualTo(0));
+        }
+        
+        [Test]
+        public void DefaultInspector_ForCollectionField_MimicsGenericInspector()
+        {
+            var fieldInspector = new PropertyElement();
+            fieldInspector.SetTarget(new Types.TypeWithCollections());
+
+            var customInspectorElements = fieldInspector.Query<CustomInspectorElement>().ToList(); 
+            Assert.That(customInspectorElements[0].childCount, Is.EqualTo(1));
+            Assert.That(customInspectorElements[0][0], Is.TypeOf<Label>());
+            Assert.That(customInspectorElements[1].childCount, Is.EqualTo(1));
+            Assert.That(customInspectorElements[1][0], Is.TypeOf<CustomInspectorElement.DefaultInspectorElement>());
+            Assert.That(customInspectorElements[2].childCount, Is.EqualTo(0));
+        }
+        
+        [Test]
         public void CustomInspector_CallingDefaultOnEachField_MimicsGenericInspector()
         {
             var noInspector = new PropertyElement();
@@ -238,3 +340,4 @@ namespace Unity.Properties.UI.Tests
         }
     }
 }
+#pragma warning restore 649

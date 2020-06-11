@@ -2,25 +2,22 @@
 using JetBrains.Annotations;
 using Unity.Properties.UI.Internal;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI.Tests
 {
     [UI]
-    class CustomInspectorDatabaseTests
+    partial class CustomInspectorDatabaseTests
     {
         public abstract class BaseType
         {
             public const string Label = "find-my-label";
         }
         
-        public class NoInspectorDerivedType : BaseType
-        {
-        }    
+        public class NoInspectorDerivedType : BaseType {}    
 
-        public class HasInspectorDerivedType : BaseType
-        {
-        }    
+        public class HasInspectorDerivedType : BaseType {}    
         
         [UsedImplicitly]
         public class BaseTypeInspector : Inspector<BaseType>
@@ -31,6 +28,11 @@ namespace Unity.Properties.UI.Tests
                 label.AddToClassList(BaseType.Label);
                 return label;
             }
+        }
+
+        public class InspectorWithConstructor : Inspector<Vector2>
+        {
+            public InspectorWithConstructor(float data){}
         }
         
         [UsedImplicitly]
@@ -43,7 +45,7 @@ namespace Unity.Properties.UI.Tests
                 return label;
             }
         }
-
+        
         public class ASD
         {
 #pragma warning disable 649
@@ -149,6 +151,19 @@ namespace Unity.Properties.UI.Tests
                 InspectorConstraint.AssignableTo<IAnotherUserInspectorTag>());
             Assert.That(i4, Is.Not.Null);
             Assert.That(i4, Is.TypeOf<InspectorAndDrawerTypeTypeDrawer>());
+        }
+        
+        static void AssertInspectorMatchesForType<TInspected, TInspector>()
+        {
+            var inspector = CustomInspectorDatabase.GetRootInspector<TInspected>();
+            Assert.That(inspector, Is.Not.Null);
+            Assert.That(inspector, Is.TypeOf<TInspector>());
+        }
+        
+        static void AssertNoInspectorMatchesForType<TInspected>()
+        {
+            var inspector = CustomInspectorDatabase.GetRootInspector<TInspected>();
+            Assert.That(inspector, Is.Null);
         }
     }
 }

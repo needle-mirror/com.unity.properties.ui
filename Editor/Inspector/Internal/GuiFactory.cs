@@ -415,6 +415,7 @@ namespace Unity.Properties.UI.Internal
             PropertyElement root,
             PropertyElement field)
         {
+            field.SetRoot(root);
             field.SetTarget(value);
             field.binding = new PropertyBinding<TValue>(field, root, path);
 

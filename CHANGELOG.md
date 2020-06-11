@@ -1,6 +1,17 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.3.1] - 2020-06-11
+## Fixed
+* Fixed custom inspectors for enum types not being considered. 
+* Fixed `ObjectField` applying the `Texture2D` value as a background image, when `objectType` is set to `typeof(Texture2D)`.
+* Fixed constant repainting when display a list.
+* Fixed `InspectionContext` not being properly propagated with nested custom inspectors. 
+
+### Changed
+* Update `com.unity.properties` to version `1.3.1-preview`.
+* Update `com.unity.serialization` to version `1.3.1-preview`.
+  
 ## [1.3.0] - 2020-05-13
 ## Added
 * Added support for using "." in `uxml` files to refer to the value being inspected in a custom inspector.

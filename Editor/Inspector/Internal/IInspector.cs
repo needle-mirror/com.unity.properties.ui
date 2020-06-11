@@ -87,4 +87,6 @@ namespace Unity.Properties.UI.Internal
     {
         InspectorContext<T> Context { get; set; }
     }
+    
+    interface IExperimentalInspector{}
 }

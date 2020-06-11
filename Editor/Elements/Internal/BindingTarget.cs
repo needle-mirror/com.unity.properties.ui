@@ -68,13 +68,18 @@ namespace Unity.Properties.UI.Internal
 
         public void VisitAtPath(PropertyPath path, VisualElement parent)
         {
+            VisitAtPath(path, parent, m_Visitor);
+        }
+        
+        public void VisitAtPath<T>(PropertyPath path, VisualElement parent, InspectorVisitor<T> visitor)
+        {
             var contextPath = new PropertyPath();
             contextPath.PushPath(path);
             contextPath.Pop();
 
-            using (m_Visitor.VisitorContext.MakePropertyPathScope(m_Visitor, contextPath))
-            using (m_Visitor.VisitorContext.MakeParentScope(parent))
-                PropertyContainer.Visit(ref m_Target, m_Visitor, path);
+            using (visitor.VisitorContext.MakePropertyPathScope(visitor, contextPath))
+            using (visitor.VisitorContext.MakeParentScope(parent))
+                PropertyContainer.Visit(ref m_Target, visitor, path);
         }
 
         public void SetAtPath<TValue>(PropertyPath path, TValue value)

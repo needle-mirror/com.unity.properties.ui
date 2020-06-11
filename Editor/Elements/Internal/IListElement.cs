@@ -180,15 +180,15 @@ namespace Unity.Properties.UI.Internal
 
                     Root.SetValue(Path, newArray);
                     break;
-                case List<TElement> list:
-                    while (list.Count > count)
+                default:
+                    while (iList.Count > count)
                     {
-                        list.RemoveAt(list.Count - 1);
+                        iList.RemoveAt(iList.Count - 1);
                     }
 
-                    while (list.Count < count)
+                    while (iList.Count < count)
                     {
-                        list.Add(CreateInstance(constructContext));
+                        iList.Add(CreateInstance(constructContext));
                     }
 
                     break;
@@ -263,8 +263,8 @@ namespace Unity.Properties.UI.Internal
                 case TElement[] array:
                     Root.SetValue(Path, ArrayUtility.InsertAt(array, array.Length, item));
                     break;
-                case List<TElement> list:
-                    list.Add(item);
+                default:
+                    iList.Add(item);
                     break;
             }
 
@@ -285,8 +285,8 @@ namespace Unity.Properties.UI.Internal
                 case TElement[] array:
                     Root.SetValue(Path, ArrayUtility.RemoveAt(array, index));
                     break;
-                case List<TElement> list:
-                    list.RemoveAt(index);
+                default:
+                    typedIList.RemoveAt(index);
                     break;
             }
 

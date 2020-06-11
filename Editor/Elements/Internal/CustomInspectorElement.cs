@@ -10,14 +10,14 @@ namespace Unity.Properties.UI.Internal
         
         readonly PropertyPath m_BasePath;
         readonly PropertyElement m_Root;
-        readonly VisualElement m_Content;
         readonly PropertyPath m_RelativePath = new PropertyPath();
         readonly PropertyPath m_AbsolutePath = new PropertyPath();
+        VisualElement m_Content;
 
         public IBinding binding { get; set; }
         
         public string bindingPath { get; set; }
-        bool HasInspector { get; }
+        bool HasInspector { get; set; }
 
         public IInspector Inspector { get; }
 

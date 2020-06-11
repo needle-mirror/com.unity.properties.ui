@@ -130,11 +130,12 @@ namespace Unity.Properties.UI.Internal
                         visitor.GetCurrentPath(),
                         property
                     );
-            
-                    visitor.VisitorContext.Parent.contentContainer.Add(new CustomInspectorElement(
+
+                    var customInspector = new CustomInspectorElement(
                         visitor.GetCurrentPath(),
                         inspector,
-                        visitor.VisitorContext.Root));
+                        visitor.VisitorContext.Root);
+                    visitor.VisitorContext.Parent.contentContainer.Add(customInspector);
                 }
                 finally
                 {

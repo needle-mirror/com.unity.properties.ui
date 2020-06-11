@@ -1,10 +1,12 @@
+using JetBrains.Annotations;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI.Internal
 {
-    class LazyLoadReferenceInspector<T> : Inspector<LazyLoadReference<T>>
+    [UsedImplicitly]
+    class LazyLoadReferenceInspector<T> : Inspector<LazyLoadReference<T>>, IExperimentalInspector
         where T : UnityEngine.Object
     {
         ObjectField m_ObjectField;
