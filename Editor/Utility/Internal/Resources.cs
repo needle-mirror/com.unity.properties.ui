@@ -41,6 +41,8 @@ namespace Unity.Properties.UI.Internal
             public static readonly UITemplate SetElementDefaultStyling = new UITemplate("set-element-default");
             public static readonly UITemplate CircularReference = new UITemplate("circular-reference");
             public static readonly UITemplate LazyLoadReference = new UITemplate("lazy-load-reference");
+            public static readonly UITemplate SearchElement = new UITemplate("search-element");
+            public static readonly UITemplate SearchElementFilterPopup = new UITemplate("search-element-filter-popup");
         }
     }
 }

@@ -20,6 +20,7 @@ namespace Unity.Properties.UI.Internal
         public readonly string Tooltip;
 
         public readonly bool IsDelayed;
+        public readonly bool IsReadOnly;
  
         public List<Attribute> Attributes { get; }
 
@@ -43,6 +44,7 @@ namespace Unity.Properties.UI.Internal
             Tooltip =  property.GetAttribute<TooltipAttribute>()?.tooltip;
             DisplayName = GuiFactory.GetDisplayName(property);
             IsDelayed = property.HasAttribute<DelayedAttribute>();
+            IsReadOnly = property.IsReadOnly;
         }
 
         /// <summary>

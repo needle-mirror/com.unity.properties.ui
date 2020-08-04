@@ -65,6 +65,11 @@ namespace Unity.Properties.UI.Internal
             m_BindingVisitor.Element = element;
             PropertyContainer.Visit(ref m_Target, m_BindingVisitor);
         }
+        
+        public void VisitAtPath(PropertyPath path, PropertyVisitor visitor)
+        {
+            PropertyContainer.Visit(ref m_Target, visitor, path);
+        }
 
         public void VisitAtPath(PropertyPath path, VisualElement parent)
         {

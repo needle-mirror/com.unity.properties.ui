@@ -42,6 +42,7 @@ namespace Unity.Properties.UI.Internal
                 {
                     Add(m_Content);
                     RegisterBindings(m_Content);
+                    RegisterSearchHandlers(m_Content);
                 }
             }
             catch (Exception exception)
@@ -114,6 +115,19 @@ namespace Unity.Properties.UI.Internal
             fullPath.PushPath(inspector.PropertyPath);
             fullPath.PushPath(pathToValue);
             root.RegisterBindings(fullPath, toBind);
+        }
+
+        void RegisterSearchHandlers(VisualElement content)
+        {
+            if (content is CustomInspectorElement && content != this)
+                return;
+
+            if (content is SearchElement search)
+                search.ResolveSearchHandlerBindings(m_Root);
+            
+            if (!(content is PropertyElement) && !(content is DefaultInspectorElement))
+                foreach (var child in content.Children())
+                    RegisterSearchHandlers(child);
         }
     }
 }

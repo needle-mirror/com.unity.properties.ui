@@ -1,19 +1,44 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.4.3] - 2020-08-04
+### Added
+* Added a default inspector for the `System.Version` type.
+* Added `Inspector<T>.IsReadOnly` to indicate if the target of a custom inspector is read only.
+
+### Changed
+* Update `com.unity.properties` to version `1.4.3-preview`.
+* Update `com.unity.serialization` to version `1.4.3-preview`.
+
+## [1.4.2] - 2020-08-04
+### Fixed
+* Fixed issues where removing an element from an array would not preserve subsequent elements.
+
+### Added
+* Added `StylingUtility.AlignInspectorLabelWidth` helper method to force labels to be dynamically computed so that they would align properly.
+
+### Changed
+* Update `com.unity.properties` to version `1.4.2-preview`.
+* Update `com.unity.serialization` to version `1.4.2-preview`.
+
+## [1.4.0] - 2020-07-30
+### Added
+* Added `SearchElement`, a reusable control which can use property bindings for search data fields and filtering. The functionality is extended when the `com.unity.quicksearch` packages is installed.
+* Added `com.unity.modules.uielements` as a dependency
+
 ## [1.3.1] - 2020-06-11
-## Fixed
+### Fixed
 * Fixed custom inspectors for enum types not being considered. 
 * Fixed `ObjectField` applying the `Texture2D` value as a background image, when `objectType` is set to `typeof(Texture2D)`.
 * Fixed constant repainting when display a list.
 * Fixed `InspectionContext` not being properly propagated with nested custom inspectors. 
 
 ### Changed
-* Update `com.unity.properties` to version `1.3.1-preview`.
-* Update `com.unity.serialization` to version `1.3.1-preview`.
+* Updated `com.unity.properties` to version `1.3.1-preview`.
+* Updated `com.unity.serialization` to version `1.3.1-preview`.
   
 ## [1.3.0] - 2020-05-13
-## Added
+### Added
 * Added support for using "." in `uxml` files to refer to the value being inspected in a custom inspector.
 * Added support for automatically nesting `PropertyElement` using `bindingPath`.
 * Added support for passing an inspection context to a ' PropertyElement'.
@@ -21,10 +46,10 @@ All notable changes to this package will be documented in this file.
 * Added support for creating array instances. 
 
 ### Changed
-* Update `com.unity.properties` to version `1.3.0-preview`.
-* Update `com.unity.serialization` to version `1.3.0-preview`.
+* Updated `com.unity.properties` to version `1.3.0-preview`.
+* Updated `com.unity.serialization` to version `1.3.0-preview`.
 
-## Fixed
+### Fixed
 * Fixed specifying nested paths (i.e.: binding-path="path.to.field") in custom inspectors.
 * Fixed binding to `UnityEngine.UIElements.Label` requiring a type converter to be registered.
 * Fixed single line list items not shrinking properly.
@@ -34,16 +59,16 @@ All notable changes to this package will be documented in this file.
 
 ## [1.2.0] - 2020-04-03
 ### Changed
-* Update `com.unity.properties` to version `1.2.0-preview`.
-* Update `com.unity.serialization` to version `1.2.0-preview`.
+* Updated `com.unity.properties` to version `1.2.0-preview`.
+* Updated `com.unity.serialization` to version `1.2.0-preview`.
 
 ## [1.1.1] - 2020-03-20
 ### Fixed
 * Fix `AttributeFilter` incorrectly being called on the internal property wrapper.
 
 ### Changed
-* Update `com.unity.properties` to version `1.1.1-preview`.
-* Update `com.unity.serialization` to version `1.1.1-preview`.
+* Updated `com.unity.properties` to version `1.1.1-preview`.
+* Updated `com.unity.serialization` to version `1.1.1-preview`.
 
 ## [1.1.0] - 2020-03-11
 ### Fixed
@@ -51,8 +76,8 @@ All notable changes to this package will be documented in this file.
 * Fixed readonly arrays being resizable from the inspector.
 
 ### Changed
-* Update `com.unity.properties` to version `1.1.0-preview`.
-* Update `com.unity.serialization` to version `1.1.0-preview`.
+* Updated `com.unity.properties` to version `1.1.0-preview`.
+* Updated `com.unity.serialization` to version `1.1.0-preview`.
 
 ### Added
 * Added the `InspectorAttribute`, allowing to put property attributes on both fields and properties.

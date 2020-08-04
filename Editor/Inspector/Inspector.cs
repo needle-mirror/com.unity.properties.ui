@@ -95,6 +95,18 @@ namespace Unity.Properties.UI
                 return Internal.Context.IsDelayed;
             }
         }
+        
+        /// <summary>
+        /// Returns <see langword="true"/> if the value field is read-only.
+        /// </summary>
+        protected bool IsReadOnly
+        {
+            get
+            {
+                EnsureValidContext();
+                return Internal.Context.IsReadOnly;
+            }
+        }
 
         /// <summary>
         /// Returns the full property path of the current target.

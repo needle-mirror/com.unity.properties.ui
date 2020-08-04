@@ -20,6 +20,12 @@
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.quicksearch",
+            "expression": "2.0.0",
+            "define": "QUICKSEARCH_2_0_0_OR_NEWER"
+        }
+    ],
     "noEngineReferences": false
 }

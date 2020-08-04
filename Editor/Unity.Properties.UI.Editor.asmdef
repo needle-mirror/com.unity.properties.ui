@@ -4,7 +4,8 @@
         "Unity.Properties",
         "Unity.Properties.Editor",
         "Unity.Properties.UI",
-        "Unity.Serialization.Editor"
+        "Unity.Serialization.Editor",
+        "com.unity.quicksearch"
     ],
     "includePlatforms": [
         "Editor"
@@ -14,5 +15,12 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": []
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.quicksearch",
+            "expression": "2.0.0",
+            "define": "QUICKSEARCH_2_0_0_OR_NEWER"
+        }
+    ]
 }

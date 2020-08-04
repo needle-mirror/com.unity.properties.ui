@@ -89,10 +89,24 @@ namespace Unity.Properties.UI.Internal
 
         public static class Unity
         {
+            public const string Label = "unity-label";
             public const string ToggleInput = "unity-toggle__input";
             public const string BaseFieldInput = "unity-base-field__input";
             public const string BasePopupFieldInput = "unity-base-popup-field__input";
             public const string BaseTextFieldInput = "unity-base-text-field__input";
+        }
+
+        public static class SearchElement
+        {
+            public const string Root = Base + "__search-element";
+        }
+
+        public static class SearchElementFilterPopup
+        {
+            public const string Root = Base + "__search-element-filter-popup";
+            public const string ChoiceButton = Root + "__choice-button";
+            public const string ChoiceName = Root + "__choice-name";
+            public const string ChoiceToken = Root + "__choice-token";
         }
     }
 }

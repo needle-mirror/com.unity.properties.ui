@@ -2,7 +2,6 @@
 {
   align-self:center;
   flex-grow:0;
-  min-width:165px;
 }
 
 .unity-toggle__input

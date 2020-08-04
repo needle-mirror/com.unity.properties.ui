@@ -15,6 +15,7 @@
     --previous-button: resource("Packages/com.unity.properties.ui/Editor Default Resources/icons/dark/PreviousButton.png");
     --next-button: resource("Packages/com.unity.properties.ui/Editor Default Resources/icons/dark/NextButton.png");
     --circular-reference-icon: resource("Packages/com.unity.properties.ui/Editor Default Resources/icons/dark/CircularReference.png");
+    --add-icon: resource("Packages/com.unity.properties.ui/Editor Default Resources/icons/dark/Add.png");
 }
 
 .unity-properties__highlight

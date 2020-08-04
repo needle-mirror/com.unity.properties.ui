@@ -317,6 +317,11 @@ namespace Unity.Properties.UI
             OnChanged(this, path);
         }
         
+        internal void VisitAtPath(PropertyPath path, PropertyVisitor visitor)
+        {
+            m_BindingTarget?.VisitAtPath(path, visitor);
+        }
+        
         internal void VisitAtPath(PropertyPath path, VisualElement localRoot)
         {
             m_BindingTarget?.VisitAtPath(path, localRoot);
