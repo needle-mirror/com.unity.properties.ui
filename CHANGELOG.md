@@ -1,6 +1,17 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.5.0] - 2020-08-21
+### Changed
+* SearchElement: `PropertiesSearchBackend` now ignores tokens containing filters. Filter are only supported by QuickSearch backend.
+* SearchElement: `QuickSearchBackend` now ignores unknown filters.
+* Updated `com.unity.properties` to version `1.5.0-preview`.
+* Updated `com.unity.serialization` to version `1.5.0-preview`.
+
+### Fixed
+* SearchElement: Fixed exception thrown when getting `Tokens` property on a query built from an empty, whitespaces only or null SearchString.
+* When using `StylingUtility.AlignInspectorLabelWidth`, the labels will be clipped instead of being shown in the background.
+
 ## [1.4.3] - 2020-08-04
 ### Added
 * Added a default inspector for the `System.Version` type.

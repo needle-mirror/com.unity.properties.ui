@@ -17,8 +17,8 @@ namespace Unity.Properties.UI.Internal
             readonly Query<TData> m_Query;
             
             public string SearchString { get; }
-            
-            public ICollection<string> Tokens => m_Query.tokens;
+
+            public ICollection<string> Tokens => m_Query?.tokens ?? Array.Empty<string>();
 
             public SearchQuery(string searchString, Query<TData> query)
             {
@@ -166,11 +166,12 @@ namespace Unity.Properties.UI.Internal
         {
             m_QueryEngine.SetSearchDataCallback(GetSearchData);
             m_QueryEngine.validateFilters = false;
+            m_QueryEngine.skipUnknownFilters = true;
         }
 
         public override ISearchQuery<TData> Parse(string text)
         {
-            return new SearchQuery(text, !string.IsNullOrEmpty(text) ? m_QueryEngine.Parse(text) : null);
+            return new SearchQuery(text, !string.IsNullOrWhiteSpace(text) ? m_QueryEngine.Parse(text) : null);
         }
 
         public override void AddSearchFilterProperty(string token, PropertyPath path, string[] supportedOperatorTypes = null)

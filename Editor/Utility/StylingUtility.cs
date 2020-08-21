@@ -27,30 +27,42 @@ namespace Unity.Properties.UI
             AlignInspectorLabelWidth (root, width, 0);
         }
 
-        static void AlignInspectorLabelWidth (VisualElement root, float topLevelLabelWidth, int indentLevel)
+        static void AlignInspectorLabelWidth (VisualElement element, float topLevelLabelWidth, int indentLevel)
         {
-            if (root.ClassListContains(UssClasses.Unity.Label))
+            if (element.ClassListContains(UssClasses.Unity.Label))
             {
-                root.style.width = Mathf.Max(topLevelLabelWidth - indentLevel * k_Indent, 0.0f);
-                root.style.minWidth = 0;
+                element.style.width = Mathf.Max(topLevelLabelWidth - indentLevel * k_Indent, 0.0f);
+                element.style.minWidth = 0;
+#if UNITY_2020_1_OR_NEWER
+                element.style.textOverflow = TextOverflow.Ellipsis;
+#endif
+                element.style.flexWrap = Wrap.NoWrap;
+                element.style.overflow = Overflow.Hidden;
+                element.style.whiteSpace = WhiteSpace.NoWrap;
             }
 
-            if (root is Foldout)
+            if (element is Foldout)
             {
-                var label = root.Q<Toggle>().Q(className:UssClasses.ListElement.ToggleInput);
+                var label = element.Q<Toggle>().Q(className:UssClasses.ListElement.ToggleInput);
                 if (null != label)
                 {
                     label.style.width = Mathf.Max(topLevelLabelWidth - indentLevel * k_Indent + 16.0f, 0.0f);
                     label.style.minWidth = 0;
+#if UNITY_2020_1_OR_NEWER
+                    label.style.textOverflow = TextOverflow.Ellipsis;
+#endif
+                    label.style.flexWrap = Wrap.NoWrap;
+                    label.style.overflow = Overflow.Hidden;
+                    label.style.whiteSpace = WhiteSpace.NoWrap;
                 }
 
                 ++indentLevel;
             }
 
-            if (root is IReloadableElement && root.ClassListContains(UssClasses.ListElement.Item))
+            if (element is IReloadableElement && element.ClassListContains(UssClasses.ListElement.Item))
                 --indentLevel;
 
-            foreach (var child in root.Children())
+            foreach (var child in element.Children())
             {
                 AlignInspectorLabelWidth (child, topLevelLabelWidth, indentLevel);
             }

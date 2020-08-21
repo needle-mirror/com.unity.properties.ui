@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Unity.Properties.UI.Internal;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -370,6 +372,65 @@ namespace Unity.Properties.UI.Tests
             Assert.That(container.DestinationData.Count, Is.EqualTo(2));
         }
 
+        [Test]
+        [TestRequires_QUICKSEARCH_2_0_0_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
+        [TestCase(SearchBackendType.Properties)]
+        [TestCase(SearchBackendType.QuickSearch)]
+        public void Search_TokensShouldBeEmptyOnEmptySearchString(SearchBackendType backendType)
+        {
+            var searchElement = new SearchElement { BackendType = backendType };
+
+            searchElement.RegisterSearchQueryHandler<TestData>(q =>
+            {
+                Assert.DoesNotThrow(() =>
+                {
+                    var i = q.Tokens.Count;
+                });
+            });
+            searchElement.AddSearchDataProperty(new PropertyPath(nameof(TestData.Name)));
+
+            searchElement.Search(string.Empty);
+            searchElement.Search(null);
+            searchElement.Search("   ");
+        }
+
+        static IEnumerable<string> Search_PropertiesBackendSkipFilterTokens_SourceData()
+        {
+            var supportedTokens = FilterOperator.GetSupportedOperators<EquatableAndComparableTestData>();
+            foreach (var supportedToken in supportedTokens)
+            {
+                yield return $"c{supportedToken}42";
+                yield return $"c{supportedToken}42  ";
+                yield return $"c{supportedToken}42 H";
+                yield return $"c{supportedToken}42 h";
+            }
+            yield return "h";
+            yield return "H";
+            yield return "";
+            yield return "  ";
+        }
+
+        [Test]
+        [TestCaseSource(nameof(Search_PropertiesBackendSkipFilterTokens_SourceData))]
+        public void Search_PropertiesBackendSkipFilterTokens(string input)
+        {
+            var searchElement = new SearchElement { BackendType = SearchBackendType.Properties };
+
+            var sourceData = new[]
+            {
+                new EquatableAndComparableTestData { Name = "hello" },
+                new EquatableAndComparableTestData { Name = "hola" },
+            };
+            EquatableAndComparableTestData[] filtered = null;
+
+            searchElement.RegisterSearchQueryHandler<EquatableAndComparableTestData>(q => filtered = q.Apply(sourceData).ToArray());
+            searchElement.AddSearchDataProperty(new PropertyPath(nameof(EquatableAndComparableTestData.Name)));
+            searchElement.AddSearchFilterPopupItem("c", "component type");
+
+            searchElement.Search(input);
+            Assert.That(filtered, Is.EquivalentTo(sourceData));
+        }
+
         class TestData
         {
             public struct NestedStruct
@@ -383,6 +444,17 @@ namespace Unity.Properties.UI.Tests
             [CreateProperty] public bool Active { get; set; }
             [CreateProperty] public NestedStruct Nested { get; set; }
             [CreateProperty] public string[] StringArray { get; set; }
+        }
+
+        class EquatableAndComparableTestData : IEquatable<EquatableAndComparableTestData>, IComparable<EquatableAndComparableTestData>
+        {
+            public string Name;
+
+            public bool Equals(EquatableAndComparableTestData other)
+                => throw new NotImplementedException();
+
+            public int CompareTo(EquatableAndComparableTestData other)
+                => throw new NotImplementedException();
         }
 
         static TestData[] Generate(int size)
