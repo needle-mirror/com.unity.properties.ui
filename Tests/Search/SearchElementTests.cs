@@ -112,7 +112,7 @@ namespace Unity.Properties.UI.Tests
         [Test]
         [TestCase("id<10", "id:Id", 10)]
         [TestCase("x<50", "x:Position.x", 5)]
-        [TestRequires_QUICKSEARCH_2_0_0_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
+        [TestRequires_QUICKSEARCH_2_1_0_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
         public void Search_WithSearchFilterProperties_ReturnsFilteredResults(string searchString, string searchFilterProperties, int expectedCount)
         {
             var originalData = Generate(100);
@@ -335,7 +335,7 @@ namespace Unity.Properties.UI.Tests
         }
         
         [Test]
-        [TestRequires_QUICKSEARCH_2_0_0_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
+        [TestRequires_QUICKSEARCH_2_1_0_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
         public void Search_CustomInspectorWithCollectionFilter_ReturnsFilteredResults()
         {
             var container = new TestDataContainerWithCustomInspector
@@ -373,7 +373,7 @@ namespace Unity.Properties.UI.Tests
         }
 
         [Test]
-        [TestRequires_QUICKSEARCH_2_0_0_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
+        [TestRequires_QUICKSEARCH_2_1_0_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
         [TestCase(SearchBackendType.Properties)]
         [TestCase(SearchBackendType.QuickSearch)]
         public void Search_TokensShouldBeEmptyOnEmptySearchString(SearchBackendType backendType)

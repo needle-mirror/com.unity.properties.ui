@@ -23,8 +23,8 @@
     "versionDefines": [
         {
             "name": "com.unity.quicksearch",
-            "expression": "2.0.0",
-            "define": "QUICKSEARCH_2_0_0_OR_NEWER"
+            "expression": "2.1.0-preview.4",
+            "define": "QUICKSEARCH_2_1_0_OR_NEWER"
         }
     ],
     "noEngineReferences": false

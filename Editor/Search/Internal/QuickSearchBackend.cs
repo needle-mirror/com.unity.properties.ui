@@ -1,4 +1,4 @@
-#if QUICKSEARCH_2_0_0_OR_NEWER
+#if QUICKSEARCH_2_1_0_OR_NEWER
 using System;
 using System.Collections.Generic;
 using System.Linq;

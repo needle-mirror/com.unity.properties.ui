@@ -126,22 +126,24 @@ namespace Unity.Properties.UI
 
             if (null != m_BindingTarget)
             {
-                var type = typeof(T);
+                var declaredType = typeof(T);
+                
+                var targetType = declaredType;
                 if (typeof(T).IsClass && null != target)
                 {
-                    type = target.GetType();
+                    targetType = target.GetType();
                 }
 
-                if (type == m_BindingTarget.TargetType)
+                if (declaredType == m_BindingTarget.DeclaredType && targetType == m_BindingTarget.TargetType)
                 {
-                    (m_BindingTarget as BindingTarget<T>).Target = target;
+                    ((BindingTarget<T>) m_BindingTarget).Target = target;
                     return;
                 }
             }
 
             m_BindingTarget?.Release();
 
-            if (typeof(T).IsClass && null == target)
+            if (Unity.Properties.Internal.RuntimeTypeInfoCache<T>.CanBeNull && null == target)
             {
                 m_BindingTarget = null;
                 return;

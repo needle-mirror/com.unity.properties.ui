@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.6.0] - 2020-10-07
+### Changed
+* Updated minimum Unity version to `2020.1`.
+* Updated minimum supported version of `com.unity.quicksearch` to `2.1.0-preview.4`.
+* Updated `com.unity.properties` to version `1.6.0-preview`.
+* Updated `com.unity.serialization` to version `1.6.0-preview`.
+
+### Fixed
+* Fixed an issue where resetting the `Inspector<T>.Target` would throw an exception when nesting `PropertyElement`.
+
 ## [1.5.0] - 2020-08-21
 ### Changed
 * SearchElement: `PropertiesSearchBackend` now ignores tokens containing filters. Filter are only supported by QuickSearch backend.

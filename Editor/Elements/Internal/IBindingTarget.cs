@@ -5,6 +5,7 @@ namespace Unity.Properties.UI.Internal
 {
     interface IBindingTarget
     {
+        Type DeclaredType { get; }
         Type TargetType { get; }
         PropertyElement Root { get; }
         IInspectorVisitor Visitor { get; }

@@ -17,13 +17,15 @@ namespace Unity.Properties.UI.Internal
         }
         public PropertyElement Root { get; }
         public IInspectorVisitor Visitor { get; }
+        public Type DeclaredType { get; }
         public Type TargetType { get; }
         
         public BindingTarget(PropertyElement root, TTarget target)
         {
             Root = root;
             m_Target = target;
-            
+
+            DeclaredType = typeof(TTarget);
             TargetType = m_Target.GetType();
             m_Visitor = new InspectorVisitor<TTarget>(root, target);
             Visitor = m_Visitor;
