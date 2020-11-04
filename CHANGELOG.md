@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.5.1] - 2020-11-04
+### Fixed
+* Added support for `com.unity.quicksearch` version `3.0.0`.
+
 ## [1.5.0] - 2020-08-21
 ### Changed
 * SearchElement: `PropertiesSearchBackend` now ignores tokens containing filters. Filter are only supported by QuickSearch backend.
