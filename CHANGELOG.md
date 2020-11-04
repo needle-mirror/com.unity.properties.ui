@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.6.2] - 2020-11-04
+### Fixed
+# Added support for `com.unity.quicksearch` version `3.0.0-preview.2`.
+
+## [1.6.1] - 2020-10-28
+### Fixed
+* Fixed a crash when using the `SearchElement` "Add filter" button on OSX.
+* Updated `com.unity.serialization` to version `1.6.1-preview`.
+ 
 ## [1.6.0] - 2020-10-07
 ### Changed
 * Updated minimum Unity version to `2020.1`.

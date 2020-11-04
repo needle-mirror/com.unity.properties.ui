@@ -292,11 +292,16 @@ namespace Unity.Properties.UI
         /// </summary>
         class FilterPopupElement : PopupElement
         {
+            const int kHeaderHeight = 28;
+            const int kElementHeight = 16;
+            
             readonly float m_Width;
             readonly SearchElement m_SearchElement;
             readonly VisualElement m_Choices;
+
+            int m_ElementCount;
             
-            protected override Vector2 GetSize() => new Vector2(m_Width, worldBound.height);
+            protected override Vector2 GetSize() => new Vector2(m_Width, kHeaderHeight + kElementHeight * m_ElementCount);
 
             /// <summary>
             /// Constructs a new instance of the <see cref="SearchElement"/> control.
@@ -319,6 +324,8 @@ namespace Unity.Properties.UI
             // ReSharper disable once ParameterHidesMember
             public void AddPopupItem(string token, string filterText, string filterTooltip = "")
             {
+                m_ElementCount++;
+                
                 // Create a button with two labels.
                 var choiceButton = new Button { tooltip = filterTooltip };
                 var nameLabel = new Label(filterText);
