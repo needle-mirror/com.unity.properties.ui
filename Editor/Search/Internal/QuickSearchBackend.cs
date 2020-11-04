@@ -1,5 +1,5 @@
 #if QUICKSEARCH_3_0_0_OR_NEWER
-using Unity.Search;
+using UnityEditor.Search;
 #elif QUICKSEARCH_2_1_0_OR_NEWER
 using Unity.QuickSearch;
 #endif
