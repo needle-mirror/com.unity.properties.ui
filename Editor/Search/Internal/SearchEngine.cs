@@ -77,7 +77,7 @@ namespace Unity.Properties.UI.Internal
         public SearchEngine()
         {
             // Default to using quick search if the package is installed. Otherwise fallback to a simple implementation.
-#if QUICKSEARCH_2_0_0_OR_NEWER
+#if QUICKSEARCH_2_1_0_OR_NEWER
             m_BackendType = SearchBackendType.QuickSearch;
 #else
             m_BackendType = SearchBackendType.Properties;
@@ -160,7 +160,7 @@ namespace Unity.Properties.UI.Internal
                 return value as SearchBackend<TData>;
             }
 
-#if QUICKSEARCH_2_0_0_OR_NEWER
+#if QUICKSEARCH_2_1_0_OR_NEWER
             var backend = BackendType == SearchBackendType.QuickSearch 
                 ? (SearchBackend<TData>) new QuickSearchBackend<TData>()
                 : (SearchBackend<TData>) new PropertiesSearchBackend<TData>();
