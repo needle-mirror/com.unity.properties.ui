@@ -3,7 +3,7 @@ All notable changes to this package will be documented in this file.
 
 ## [1.4.4] - 2020-11-04
 ### Fixed
-* Added support for `com.unity.quicksearch` version `3.0.0`.
+* Added support for `com.unity.quicksearch` version `3.0.0-preview.2`.
 
 ## [1.4.3] - 2020-08-04
 ### Added
