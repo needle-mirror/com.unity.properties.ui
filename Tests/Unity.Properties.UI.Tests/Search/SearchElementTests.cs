@@ -9,8 +9,24 @@ using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI.Tests
 {
+    /// <summary>
+    /// The search engine backend type to use for tests.
+    /// </summary>
+    enum SearchBackendType
+    {
+        /// <summary>
+        /// A simple implementation used as a fallback.
+        /// </summary>
+        Properties,
+            
+        /// <summary>
+        /// The primary search engine. This is only available if the QuickSearch package is installed.
+        /// </summary>
+        QuickSearch
+    }
+    
     [TestFixture, UI]
-    sealed class SearchElementTests
+    sealed partial class SearchElementTests
     {
         EditorWindow m_Window;
 
@@ -322,12 +338,14 @@ namespace Unity.Properties.UI.Tests
              *      search-data="Id Name"
              *      source-data="SourceData"
              *      filtered-data="DestinationData"
-             *      search-filters="a:StringArray"/>
+             *      search-filters="a:StringArray"
+             *      global-string-comparison="Ordinal"/>
              */
             
             Assert.That(searchElement.SearchDelay, Is.EqualTo(100));
             Assert.That(searchHandler.Mode, Is.EqualTo(SearchHandlerType.sync));
             Assert.That(searchHandler.SearchDataType, Is.EqualTo(typeof(TestData)));
+            Assert.That(searchElement.GlobalStringComparison, Is.EqualTo(StringComparison.Ordinal));
 
             searchElement.Search("Mesh");
             
@@ -371,6 +389,44 @@ namespace Unity.Properties.UI.Tests
             
             Assert.That(container.DestinationData.Count, Is.EqualTo(2));
         }
+        
+        [Test]
+        [TestRequires_QUICKSEARCH_2_1_0_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
+        public void Search_CustomInspectorWithCollectionFilter_WhenCollectionIsIEnumerable_ReturnsFilteredResults()
+        {
+            var container = new TestDataContainerWithCustomInspector
+            {
+                SourceData = Generate(100),
+                DestinationData = new List<TestData>()
+            };
+            
+            container.SourceData[0].StringEnumerable = new[]
+            {
+                "a", "b"
+            };
+            
+            container.SourceData[1].StringEnumerable = new[]
+            {
+                "b", "c"
+            };
+            
+            container.SourceData[2].StringEnumerable = new[]
+            {
+                "c", "d", "e"
+            };
+            
+            m_PropertyElement.SetTarget(container);
+
+            var searchElement = m_PropertyElement.Q<SearchElement>("filter");
+            
+            searchElement.Search("e:e");
+            
+            Assert.That(container.DestinationData.Count, Is.EqualTo(1));
+            
+            searchElement.Search("e:b");
+            
+            Assert.That(container.DestinationData.Count, Is.EqualTo(2));
+        }
 
         [Test]
         [TestRequires_QUICKSEARCH_2_1_0_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
@@ -378,7 +434,8 @@ namespace Unity.Properties.UI.Tests
         [TestCase(SearchBackendType.QuickSearch)]
         public void Search_TokensShouldBeEmptyOnEmptySearchString(SearchBackendType backendType)
         {
-            var searchElement = new SearchElement { BackendType = backendType };
+            var searchElement = new SearchElement();
+            searchElement.RegisterSearchBackend(CreateSearchBackend<TestData>(backendType));
 
             searchElement.RegisterSearchQueryHandler<TestData>(q =>
             {
@@ -414,8 +471,10 @@ namespace Unity.Properties.UI.Tests
         [TestCaseSource(nameof(Search_PropertiesBackendSkipFilterTokens_SourceData))]
         public void Search_PropertiesBackendSkipFilterTokens(string input)
         {
-            var searchElement = new SearchElement { BackendType = SearchBackendType.Properties };
+            var searchElement = new SearchElement();
 
+            searchElement.RegisterSearchBackend(CreateSearchBackend<EquatableAndComparableTestData>(SearchBackendType.Properties));
+            
             var sourceData = new[]
             {
                 new EquatableAndComparableTestData { Name = "hello" },
@@ -429,6 +488,54 @@ namespace Unity.Properties.UI.Tests
 
             searchElement.Search(input);
             Assert.That(filtered, Is.EquivalentTo(sourceData));
+        }
+        
+        [Test]
+        public void Search_BackendTokensParserHandlesDoubleQuotes([Values(SearchBackendType.Properties, SearchBackendType.QuickSearch)] SearchBackendType type)
+        {
+            SearchBackend<string> backend = null;
+            
+            switch (type)
+            {
+                case SearchBackendType.Properties:
+                    backend = new PropertiesSearchBackend<string>();
+                    break;
+                case SearchBackendType.QuickSearch:
+#if QUICKSEARCH_2_1_0_OR_NEWER
+                    backend = new QuickSearchBackend<string>();
+#else
+                    Assert.Pass("QuickSearchBackend needs to be available for this test");
+#endif
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
+            
+            var query = backend.Parse("filter:\"Hello World\" \"Hello\" World filter:\"  Hello filter:\"World");
+            Assert.That(query.Tokens, Is.EquivalentTo(new []
+            {
+                "filter:\"Hello World\"",
+                "\"Hello\"",
+                "World",
+                "filter:\"  Hello filter:\"",
+                "World"
+            }));
+        }
+        
+        static ISearchBackend<TData> CreateSearchBackend<TData>(SearchBackendType type)
+        {
+            switch (type)
+            {
+                case SearchBackendType.Properties:
+                    return new PropertiesSearchBackend<TData>();
+                case SearchBackendType.QuickSearch:
+#if QUICKSEARCH_2_1_0_OR_NEWER
+                    return new QuickSearchBackend<TData>();
+#endif
+                    throw new InvalidOperationException("QuickSearch needs to be installed to tests this backend");
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
         }
 
         class TestData
@@ -444,6 +551,7 @@ namespace Unity.Properties.UI.Tests
             [CreateProperty] public bool Active { get; set; }
             [CreateProperty] public NestedStruct Nested { get; set; }
             [CreateProperty] public string[] StringArray { get; set; }
+            [CreateProperty] public IEnumerable<string> StringEnumerable { get; set; }
         }
 
         class EquatableAndComparableTestData : IEquatable<EquatableAndComparableTestData>, IComparable<EquatableAndComparableTestData>

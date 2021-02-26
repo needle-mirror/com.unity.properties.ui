@@ -38,6 +38,46 @@ namespace Unity.Properties.UI.Tests
         {
             public Texture2D Texture;
         }
+
+        [Flags]
+        enum LargeFlagsEnum : long
+        {
+            None      = 1 << 0,
+            Large     = 1 << 31,
+            VeryLarge = 2147483648, 
+        }
+        
+        enum LargeEnum : long
+        {
+            Large = 1 << 31,
+            VeryLarge = 2147483648,
+        }
+
+        [Flags]
+        enum RegularFlagsEnum
+        {
+            None      = 1 << 0,
+            Large     = 1 << 31,
+        }
+        
+        enum RegularEnum
+        {
+            Large     = 1 << 31,
+        }
+
+        struct TypeWithLargeEnums
+        {
+            public LargeFlagsEnum LargeEnumFlags;
+            public LargeEnum LargeEnum;
+        }
+        
+        struct TypeWithLargeAndRegularEnums
+        {
+            public LargeFlagsEnum LargeEnumFlags;
+            public LargeEnum LargeEnum;
+            public RegularFlagsEnum RegularFlagsEnum;
+            public RegularEnum RegularEnum;
+        }
         
         [Test]
         public void PropertyElement_Target_CanBeSetAndGet()
@@ -308,6 +348,28 @@ namespace Unity.Properties.UI.Tests
             Assert.DoesNotThrow(() => textureField.value = null);
         }
 
+        [Test]
+        public void EnumFields_WhenUnderlyingTypeIsLong_AreSkipped()
+        {
+            var element = new PropertyElement();
+            element.SetTarget(new TypeWithLargeEnums());
+#if !UNITY_2020_2_OR_NEWER            
+            Assert.That(element.Query<EnumField>().ToList().Count, Is.EqualTo(0));
+            Assert.That(element.Query<EnumFlagsField>().ToList().Count, Is.EqualTo(0));
+#else
+            Assert.That(element.Query<EnumField>().ToList().Count, Is.EqualTo(1));
+            Assert.That(element.Query<EnumFlagsField>().ToList().Count, Is.EqualTo(1));
+#endif
+
+            element.SetTarget(new TypeWithLargeAndRegularEnums());
+#if !UNITY_2020_2_OR_NEWER
+            Assert.That(element.Query<EnumField>().ToList().Count, Is.EqualTo(1));
+            Assert.That(element.Query<EnumFlagsField>().ToList().Count, Is.EqualTo(1));
+#else
+            Assert.That(element.Query<EnumField>().ToList().Count, Is.EqualTo(2));
+            Assert.That(element.Query<EnumFlagsField>().ToList().Count, Is.EqualTo(2));
+#endif
+        }
         
         static ComplexUIContainer GetContainer()
         {

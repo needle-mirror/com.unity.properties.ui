@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Unity.Properties.UI.Internal
 {
@@ -11,7 +12,9 @@ namespace Unity.Properties.UI.Internal
     {
         class SearchQuery : ISearchQuery<TData>
         {
-            static readonly string[] k_SupportedOperators = FilterOperator.GetSupportedOperators<TData>();
+            // ReSharper disable once StaticMemberInGenericType
+            static readonly StringBuilder s_StringBuilder = new StringBuilder();
+            static readonly string[] s_SupportedOperators = FilterOperator.GetSupportedOperators<TData>();
 
             readonly Func<TData, IEnumerable<string>> m_GetSearchDataFunc;
             readonly string[] m_Tokens;
@@ -23,8 +26,53 @@ namespace Unity.Properties.UI.Internal
             public SearchQuery(string searchString, Func<TData, IEnumerable<string>> getSearchDataFunc)
             {
                 SearchString = searchString;
-                m_Tokens = string.IsNullOrWhiteSpace(SearchString) ? Array.Empty<string>() : SearchString.Split(' ');
+                m_Tokens = string.IsNullOrWhiteSpace(SearchString) ? Array.Empty<string>() : SplitTokens(SearchString).ToArray();
                 m_GetSearchDataFunc = getSearchDataFunc;
+            }
+
+            static IEnumerable<string> SplitTokens(string input)
+            {
+                s_StringBuilder.Clear();
+                
+                var quoted = false;
+                var prev = '\0';
+                
+                foreach (var c in input)
+                {
+                    // An unquoted space is treated as a filter separator
+                    if (!quoted && c == ' ')
+                    {
+                        if (s_StringBuilder.Length > 0)
+                        {
+                            yield return s_StringBuilder.ToString();
+                            s_StringBuilder.Clear();
+                        }
+                        
+                        continue;
+                    }
+
+                    s_StringBuilder.Append(c);
+
+                    // A quoted string should be treated as part of a filter, including spaces.
+                    if (c == '"' && prev != '\\')
+                    {
+                        quoted = !quoted;
+
+                        // When closing a quoted string this immediately terminates the filter and is treated as a separator.
+                        if (!quoted)
+                        {
+                            yield return s_StringBuilder.ToString();
+                            s_StringBuilder.Clear();
+                        }
+                    }
+                    
+                    prev = c;
+                }
+
+                if (s_StringBuilder.Length > 0)
+                {
+                    yield return s_StringBuilder.ToString();
+                }
             }
             
             public IEnumerable<TData> Apply(IEnumerable<TData> data)
@@ -40,7 +88,7 @@ namespace Unity.Properties.UI.Internal
                 foreach (var token in m_Tokens)
                 {
                     var isTokenSupported = true;
-                    foreach (var supportedOperator in k_SupportedOperators)
+                    foreach (var supportedOperator in s_SupportedOperators)
                     {
                         if (token.IndexOf(supportedOperator, StringComparison.OrdinalIgnoreCase) < 0)
                             continue;

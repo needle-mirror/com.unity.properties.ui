@@ -18,6 +18,40 @@ namespace Unity.Properties.UI.Internal
         }
     }
 
+    interface ISearchDataCallback
+    {
+        void Register(ISearchBackend backend);
+    }
+
+    class SearchDataCallback<TData> : ISearchDataCallback
+    {
+        public Func<TData, IEnumerable<string>> GetSearchDataFunc { get; set; }
+
+        public void Register(ISearchBackend backend)
+        {
+            if (backend is ISearchBackend<TData> typed)
+                typed.AddSearchDataCallback(GetSearchDataFunc);
+        }
+    }
+    
+    interface ISearchFilterCallback
+    {
+        void Register(ISearchBackend backend);
+    }
+
+    class SearchFilterCallback<TData, TFilter> : ISearchFilterCallback
+    {
+        public string Token { get; set; }
+        public Func<TData, TFilter> GetSearchFilterFunc { get; set; }
+        public string[] SupportedOperatorTypes { get; set; }
+
+        public void Register(ISearchBackend backend)
+        {
+            if (backend is ISearchBackend<TData> typed)
+                typed.AddSearchFilterCallback(Token, GetSearchFilterFunc, SupportedOperatorTypes);
+        }
+    }
+
     /// <summary>
     /// Stores a token to property path which should be used for filtering.
     /// </summary>
@@ -34,56 +68,40 @@ namespace Unity.Properties.UI.Internal
             SupportedOperatorTypes = supportedOperatorTypes;
         }
     }
-    
-    /// <summary>
-    /// The search engine backend type.
-    /// </summary>
-    enum SearchBackendType
-    {
-        /// <summary>
-        /// A simple implementation used as a fallback.
-        /// </summary>
-        Properties,
-            
-        /// <summary>
-        /// The primary search engine. This is only available if the QuickSearch package is installed.
-        /// </summary>
-        QuickSearch
-    }
 
     class SearchEngine
     {
+        StringComparison m_GlobalStringComparison;
+        
         readonly Dictionary<Type, ISearchBackend> m_SearchBackends = new Dictionary<Type, ISearchBackend>();
 
         List<SearchFilterProperty> SearchFilterProperties { get; } = new List<SearchFilterProperty>();
         List<SearchDataProperty> SearchDataProperties { get; } = new List<SearchDataProperty>();
+        List<ISearchDataCallback> SearchDataCallbacks { get; } = new List<ISearchDataCallback>();
+        List<ISearchFilterCallback> SearchFilterCallbacks { get; } = new List<ISearchFilterCallback>();
 
-        SearchBackendType m_BackendType;
-
-        public SearchBackendType BackendType
-        {
-            get => m_BackendType;
-            set
-            {
-                if (m_BackendType != value)
-                    m_SearchBackends.Clear();
-                
-                m_BackendType = value;
-            }
-        }
-        
         public List<string> SearchFilterTokens { get; } = new List<string>();
 
-        public SearchEngine()
+        /// <summary>
+        /// Global string comparison options for word matching and filter handling (if not overridden).
+        /// </summary>
+        public StringComparison GlobalStringComparison
         {
-            // Default to using quick search if the package is installed. Otherwise fallback to a simple implementation.
-#if QUICKSEARCH_2_1_0_OR_NEWER
-            m_BackendType = SearchBackendType.QuickSearch;
-#else
-            m_BackendType = SearchBackendType.Properties;
-#endif
+            get
+            {
+                return m_GlobalStringComparison;
+            }
+            set
+            {
+                m_GlobalStringComparison = value;
+
+                foreach (var backend in m_SearchBackends.Values)
+                {
+                    backend.GlobalStringComparison = value;
+                }
+            }
         }
-        
+
         /// <summary>
         /// Clears the internal state of the <see cref="SearchEngine"/>.
         /// </summary>
@@ -111,7 +129,13 @@ namespace Unity.Properties.UI.Internal
 
         public void AddSearchDataCallback<TData>(Func<TData, IEnumerable<string>> getSearchDataFunc)
         {
-            GetBackend<TData>().AddSearchDataCallback(getSearchDataFunc);
+            SearchDataCallbacks.Add(new SearchDataCallback<TData>
+            {
+                GetSearchDataFunc = getSearchDataFunc
+            });
+            
+            foreach (var backend in m_SearchBackends.Values.OfType<ISearchBackend<TData>>())
+                backend.AddSearchDataCallback(getSearchDataFunc);
         }
 
         /// <summary>
@@ -140,7 +164,15 @@ namespace Unity.Properties.UI.Internal
         public void AddSearchFilterCallback<TData, TFilter>(string token, Func<TData, TFilter> getSearchFilterFunc, string[] supportedOperatorTypes = null)
         {
             SearchFilterTokens.Add(token);
-            GetBackend<TData>().AddSearchFilterCallback(token, getSearchFilterFunc, supportedOperatorTypes);
+            SearchFilterCallbacks.Add(new SearchFilterCallback<TData, TFilter>
+            {
+                Token = token,
+                GetSearchFilterFunc = getSearchFilterFunc,
+                SupportedOperatorTypes = supportedOperatorTypes
+            });
+            
+            foreach (var backend in m_SearchBackends.Values.OfType<ISearchBackend<TData>>())
+                backend.AddSearchFilterCallback(token, getSearchFilterFunc, supportedOperatorTypes);
         }
 
         /// <summary>
@@ -153,23 +185,17 @@ namespace Unity.Properties.UI.Internal
             return GetBackend<TData>().Parse(text);
         }
 
-        SearchBackend<TData> GetBackend<TData>()
+        public void RegisterBackend<TData>(ISearchBackend<TData> backend)
         {
-            if (m_SearchBackends.TryGetValue(typeof(TData), out var value))
-            {
-                return value as SearchBackend<TData>;
-            }
-
-#if QUICKSEARCH_2_1_0_OR_NEWER
-            var backend = BackendType == SearchBackendType.QuickSearch
-                ? (SearchBackend<TData>) new QuickSearchBackend<TData>()
-                : (SearchBackend<TData>) new PropertiesSearchBackend<TData>();
-#else
-            var backend = new PropertiesSearchBackend<TData>();
-#endif
-
+            if (null == backend)
+                throw new ArgumentNullException(nameof(backend));
+            
+            // NOTE: This method can overwrite the built in backend which was registered but not another custom backend.
+            if (m_SearchBackends.TryGetValue(typeof(TData), out var instance) && !(instance is SearchBackend<TData>))
+                throw new InvalidOperationException($"Failed to register ISearchBackend for Type=[{typeof(TData)}]. Type has already been registered.");
+            
             m_SearchBackends[typeof(TData)] = backend;
-
+            
             // Register any property based search data.
             foreach (var searchData in SearchDataProperties)
                 backend.AddSearchDataProperty(searchData.Path);
@@ -177,22 +203,68 @@ namespace Unity.Properties.UI.Internal
             // Register any property based filters.
             foreach (var filter in SearchFilterProperties)
                 backend.AddSearchFilterProperty(filter.Token, filter.Path, filter.SupportedOperatorTypes);
+        }
+        
+        public void UnregisterBackend<TData>(ISearchBackend<TData> backend)
+        {
+            if (null == backend)
+                throw new ArgumentNullException(nameof(backend));
+            
+            if (!m_SearchBackends.TryGetValue(typeof(TData), out var instance))
+                throw new InvalidOperationException($"Failed to unregister ISearchBackend for Type=[{typeof(TData)}]. Backend has not been registered.");
+            
+            if (instance != backend)
+                throw new InvalidOperationException($"Failed to unregister ISearchBackend for Type=[{typeof(TData)}]. The specified backend does not match the registered instance.");
+
+            m_SearchBackends.Remove(typeof(TData));
+        }
+
+        static ISearchBackend<TData> CreateDefaultBackend<TData>()
+        {
+            // Default to using quick search if the package is installed. Otherwise fallback to a simple implementation using properties.
+#if QUICKSEARCH_2_1_0_OR_NEWER
+            return new QuickSearchBackend<TData>();
+#else
+            return new PropertiesSearchBackend<TData>();
+#endif
+        }
+
+        ISearchBackend<TData> GetBackend<TData>()
+        {
+            if (m_SearchBackends.TryGetValue(typeof(TData), out var value))
+            {
+                return value as ISearchBackend<TData>;
+            }
+
+            var backend = CreateDefaultBackend<TData>();
+            
+            m_SearchBackends[typeof(TData)] = backend;
+
+            // Register any property based search data.
+            foreach (var searchDataProperty in SearchDataProperties)
+                backend.AddSearchDataProperty(searchDataProperty.Path);
+            
+            // Register any property based filters.
+            foreach (var searchFilterProperty in SearchFilterProperties)
+                backend.AddSearchFilterProperty(searchFilterProperty.Token, searchFilterProperty.Path, searchFilterProperty.SupportedOperatorTypes);
+            
+            // Register any search data callbacks. This is done via interface to invoke using the strongly typed interface.
+            foreach (var searchDataCallback in SearchDataCallbacks)
+                searchDataCallback.Register(backend);
+            
+            // Register any search filter callbacks. This is done via interface to invoke using the strongly typed interface.
+            foreach (var searchFilterCallback in SearchFilterCallbacks)
+                searchFilterCallback.Register(backend);
             
             return backend;
         }
     }
-
-    interface ISearchBackend
-    {
-        void AddSearchDataProperty(PropertyPath path);
-        void AddSearchFilterProperty(string token, PropertyPath path, string[] supportedOperatorTypes = null);
-    }
-
+    
     /// <summary>
     /// Common interface to abstract the query engine backend.
     /// </summary>
     /// <typeparam name="TData">The strongly typed data this engine can filter.</typeparam>
-    abstract class SearchBackend<TData> : ISearchBackend
+    abstract class SearchBackend<TData> : ISearchBackend<TData>
     {
         class SearchDataVisitor : PathVisitor
         {
@@ -237,7 +309,12 @@ namespace Unity.Properties.UI.Internal
         readonly List<PropertyPath> m_SearchDataProperties = new List<PropertyPath>();
         readonly List<Func<TData, IEnumerable<string>>> m_SearchDataFunc = new List<Func<TData, IEnumerable<string>>>();
         readonly SearchDataVisitor m_SearchDataVisitor = new SearchDataVisitor();
+        
+        public StringComparison GlobalStringComparison { get; set; }
 
+        // ReSharper disable once StaticMemberInGenericType
+        static readonly List<string> s_SearchData = new List<string>();
+        
         /// <summary>
         /// Returns all search data strings for the given <typeparamref name="TData"/> instance.
         /// </summary>
@@ -249,11 +326,23 @@ namespace Unity.Properties.UI.Internal
         /// <returns>An <see cref="IEnumerator{T}"/> over the search data strings for the specified data.</returns>
         protected IEnumerable<string> GetSearchData(TData data)
         {
+            s_SearchData.Clear();
+            
             if (RuntimeTypeInfoCache<TData>.CanBeNull)
-                if (null == data) yield break;
-
-            foreach (var searchData in m_SearchDataFunc.SelectMany(func => func(data)))
-                yield return searchData;
+            {
+                if (null == data)
+                {
+                    return s_SearchData;
+                }
+            }
+            
+            foreach (var func in m_SearchDataFunc)
+            {
+                foreach (var searchData in func(data))
+                {
+                    s_SearchData.Add(searchData);
+                }
+            }
 
             foreach (var searchDataPath in m_SearchDataProperties)
             {
@@ -265,9 +354,16 @@ namespace Unity.Properties.UI.Internal
                 if (m_SearchDataVisitor.ErrorCode != VisitErrorCode.Ok) 
                     continue;
 
-                foreach (var element in m_SearchDataVisitor.SearchData.Where(element => null != element))
-                    yield return element;
+                foreach (var element in m_SearchDataVisitor.SearchData)
+                {
+                    if (null != element)
+                    {
+                        s_SearchData.Add(element);
+                    }
+                }
             }
+
+            return s_SearchData;
         }
 
         public void AddSearchDataProperty(PropertyPath path)

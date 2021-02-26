@@ -42,8 +42,12 @@ namespace Unity.Properties.UI.Internal
 
         void OnChanged(ChangeEvent<TFieldValue> evt)
         {
-            if (TypeConversion.TryConvert(evt.newValue, out float newValue)
-                && TypeConversion.TryConvert(Mathf.Max(newValue, m_MinValue), out TValue value))
+            var newValue = evt.newValue;
+            if (!TypeConversion.TryConvert(ref newValue, out float convertedNewValue))
+                return;
+
+            var max = Mathf.Max(convertedNewValue, m_MinValue);
+            if (TypeConversion.TryConvert(ref max, out TValue value))
             {
                 Target = value;
             }
@@ -51,7 +55,8 @@ namespace Unity.Properties.UI.Internal
 
         public override void Update()
         {
-            if (TypeConversion.TryConvert(Target, out TFieldValue value) && !value.Equals(m_Field.value))
+            var target = Target;
+            if (TypeConversion.TryConvert(ref target, out TFieldValue value) && !value.Equals(m_Field.value))
             {
                 m_Field.SetValueWithoutNotify(value);
             }

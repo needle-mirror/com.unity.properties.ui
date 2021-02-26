@@ -34,7 +34,7 @@ namespace Unity.Properties.UI.Internal
                 case Label label:
                     GuiFactory.SetCallbacks(ref value, path, root, label);
                     break;
-                case BindableElement bindable when element.GetType() == typeof(BindableElement) && TypeConversion.TryConvert(value, out Texture2D _):
+                case BindableElement bindable when element.GetType() == typeof(BindableElement) && TypeConversion.TryConvert(ref value, out Texture2D _):
                     GuiFactory.SetCallbacks(ref value, path, root, bindable);
                     break;
                 default:

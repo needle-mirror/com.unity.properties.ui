@@ -260,12 +260,19 @@ namespace Unity.Properties.UI.Internal
 
         static bool IsFieldTypeSupported<TContainer, TValue>()
         {
-            if (typeof(TValue) == typeof(object) && typeof(TContainer) != typeof(PropertyWrapper<TValue>))
+            var valueType = typeof(TValue); 
+            if (valueType == typeof(object) && typeof(TContainer) != typeof(PropertyWrapper<TValue>))
                 return false;
 
-            if (Nullable.GetUnderlyingType(typeof(TValue)) != null)
+            if (Nullable.GetUnderlyingType(valueType) != null)
                 return false;
 
+#if !UNITY_2020_2_OR_NEWER
+            // 64-bits enums are not supported in UIToolkit right now.
+            if (valueType.IsEnum && Enum.GetUnderlyingType(valueType) == typeof(long))
+                return false;
+#endif
+            
             return true;
         }
 

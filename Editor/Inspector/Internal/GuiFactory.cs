@@ -331,7 +331,7 @@ namespace Unity.Properties.UI.Internal
                 if (!Root.TryGetValue<TValue>(Path, out var value))
                     return;
 
-                if (!TypeConversion.TryConvert(value, out Texture2D texture))
+                if (!TypeConversion.TryConvert(ref value, out Texture2D texture))
                     return;
 
                 Element.style.backgroundImage = texture;
@@ -349,7 +349,7 @@ namespace Unity.Properties.UI.Internal
                 if (!Root.TryGetValue<TValue>(Path, out var value))
                     return;
 
-                Element.text = TypeConversion.TryConvert(value, out string strValue) ? strValue : value.ToString();
+                Element.text = TypeConversion.TryConvert(ref value, out string strValue) ? strValue : value.ToString();
             }
         }
 
@@ -379,7 +379,7 @@ namespace Unity.Properties.UI.Internal
                 if (!Root.TryGetValue<TValue>(Path, out var value))
                     return;
 
-                if (!TypeConversion.TryConvert(value, out TFieldType fieldValue))
+                if (!TypeConversion.TryConvert(ref value, out TFieldType fieldValue))
                     return;
 
                 if ((!typeof(TValue).IsValueType && null == value) || fieldValue.Equals(Element.value))
@@ -438,7 +438,7 @@ namespace Unity.Properties.UI.Internal
             PropertyElement root,
             BaseField<TFieldType> field)
         {
-            if (TypeConversion.TryConvert(value, out TFieldType fieldValue))
+            if (TypeConversion.TryConvert(ref value, out TFieldType fieldValue))
             {
                 field.SetValueWithoutNotify(fieldValue);
                 field.binding = new Binding<TFieldType, TValue>(field, root, path);
@@ -453,7 +453,7 @@ namespace Unity.Properties.UI.Internal
             PropertyElement root,
             BindableElement element)
         {
-            if (!TypeConversion.TryConvert(value, out Texture2D texture))
+            if (!TypeConversion.TryConvert(ref value, out Texture2D texture))
                 return;
             
             element.style.backgroundImage = texture;
@@ -466,7 +466,7 @@ namespace Unity.Properties.UI.Internal
             PropertyElement root,
             Label label)
         {
-            label.text = TypeConversion.TryConvert(value, out string strValue) ? strValue : value.ToString();
+            label.text = TypeConversion.TryConvert(ref value, out string strValue) ? strValue : value.ToString();
             label.binding = new LabelBinding<TValue>(label, root, path);
         }
 
@@ -478,7 +478,7 @@ namespace Unity.Properties.UI.Internal
             if (null == element)
                 return;
 
-            if (!TypeConversion.TryConvert(fieldValue, out TValue value))
+            if (!TypeConversion.TryConvert(ref fieldValue, out TValue value))
                 return;
 
             var oldValue = element.GetValue<TValue>(path);
@@ -487,7 +487,7 @@ namespace Unity.Properties.UI.Internal
                 return;
 
             var newValue = element.GetValue<TValue>(path);
-            if (TypeConversion.TryConvert(newValue, out TFieldType newFieldValue))
+            if (TypeConversion.TryConvert(ref newValue, out TFieldType newFieldValue))
             {
                 field.SetValueWithoutNotify(newFieldValue);
             }

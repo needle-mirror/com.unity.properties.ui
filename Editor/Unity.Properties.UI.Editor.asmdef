@@ -24,7 +24,7 @@
         },
         {
             "name": "com.unity.quicksearch",
-            "expression": "3.0.0-preview.1",
+            "expression": "3.0.0-preview.2",
             "define": "QUICKSEARCH_3_0_0_OR_NEWER"
         }
     ]

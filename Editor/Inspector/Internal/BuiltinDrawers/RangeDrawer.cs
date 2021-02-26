@@ -20,8 +20,10 @@ namespace Unity.Properties.UI.Internal
         {
             base.Build();
             var range = DrawerAttribute;
-            m_Field.lowValue = TypeConversion.Convert<float, TFieldType>(Mathf.Max(range.min, LowValue));
-            m_Field.highValue = TypeConversion.Convert<float, TFieldType>(Mathf.Min(range.max, HighValue));
+            var lowValue = Mathf.Max(range.min, LowValue);
+            var highValue = Mathf.Min(range.max, HighValue);
+            m_Field.lowValue = TypeConversion.Convert<float, TFieldType>(ref lowValue);
+            m_Field.highValue = TypeConversion.Convert<float, TFieldType>(ref highValue);
 
             var root = new VisualElement();
             root.Add(m_Field);
@@ -44,7 +46,7 @@ namespace Unity.Properties.UI.Internal
         void OnChanged(ChangeEvent<float> evt)
         {
             var clampedValue = Mathf.Clamp(evt.newValue, DrawerAttribute.min, DrawerAttribute.max);
-            var value = TypeConversion.Convert<float, TValue>(clampedValue);
+            var value = TypeConversion.Convert<float, TValue>(ref clampedValue);
             if (!value.Equals(Target))
             {
                 Target = value;
@@ -54,10 +56,11 @@ namespace Unity.Properties.UI.Internal
 
         public override void Update()
         {
-            var value = TypeConversion.Convert<TValue, float>(Target);
+            var target = Target;
+            var value = TypeConversion.Convert<TValue, float>(ref target);
             if (value != m_ValueField.value)
             {
-                m_ValueField.SetValueWithoutNotify(TypeConversion.Convert<TValue, float>(Target));
+                m_ValueField.SetValueWithoutNotify(TypeConversion.Convert<TValue, float>(ref target));
             }
         }
     }

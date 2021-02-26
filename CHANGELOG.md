@@ -1,9 +1,25 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.7.0] - 2021-02-26
+### Changed
+* Updated `com.unity.properties` to version `1.7.0-preview`.
+* Updated `com.unity.serialization` to version `1.7.0-preview`.
+
+### Added
+* Added `GlobalStringComparison` option to `SearchElement`.
+
+### Fixed
+* Reduced allocations when executing searches using `SearchElement`.
+* In Unity versions prior to `2020.2`, Enums using an underlying type of `long` will now be skipped when generating the UI hierarchy, since they can't be represented correctly.
+
+## [1.6.3] - 2021-01-15
+### Fixed
+* Fixed `SearchElement` treating double quotes differently when the `com.unity.quicksearch` package is not installed.
+
 ## [1.6.2] - 2020-11-04
 ### Fixed
-# Added support for `com.unity.quicksearch` version `3.0.0-preview.2`.
+* Added support for `com.unity.quicksearch` version `3.0.0-preview.2`.
 
 ## [1.6.1] - 2020-10-28
 ### Fixed

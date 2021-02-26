@@ -8,6 +8,7 @@ using Unity.QuickSearch;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Unity.Properties.Internal;
 
 namespace Unity.Properties.UI.Internal
@@ -71,6 +72,8 @@ namespace Unity.Properties.UI.Internal
                 }
             }
 
+            static readonly MethodInfo s_AddEnumerableFilterMethod = typeof(FilterVisitor).GetMethod(nameof(AddEnumerableFilter), BindingFlags.NonPublic | BindingFlags.Static);
+            
             readonly CollectionFilterVisitor m_CollectionFilterVisitor = new CollectionFilterVisitor();
             
             public int PathIndex;
@@ -139,6 +142,22 @@ namespace Unity.Properties.UI.Internal
                         collectionPropertyBagAccept.Accept(m_CollectionFilterVisitor, ref value);
                         return;
                     }
+
+                    // Explicit support for `IEnumerable<T>`
+                    if (typeof(TValue).IsGenericType && typeof(TValue).GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                    {
+                        var elementType = typeof(TValue).GetGenericArguments()[0];
+                        var genericMethod = s_AddEnumerableFilterMethod.MakeGenericMethod(elementType);
+                        
+                        genericMethod.Invoke(this, new object[]
+                        {
+                            QueryEngine,
+                            Token,
+                            Path
+                        });
+                        
+                        return;
+                    }
                     
                     var path = Path;
                     var token = Token;
@@ -162,6 +181,19 @@ namespace Unity.Properties.UI.Internal
 
                 PropertyBag.AcceptWithSpecializedVisitor(propertyBag, this, ref value);
             }
+            
+            static void AddEnumerableFilter<TElement>(QueryEngine<TData> queryEngine, string token, PropertyPath path)
+            {
+                var p = path;
+            
+                queryEngine.AddFilter<TElement, TElement>(token, (data, _, t, transformedInput) =>
+                {
+                    if (!PropertyContainer.TryGetValue<TData, IEnumerable<TElement>>(ref data, p, out var collection))
+                        return false;
+
+                    return null != collection && collection.Any(e => FilterOperator.ApplyOperator(t, e, transformedInput, queryEngine.globalStringComparison));
+                }, TypeConversion.Convert<string, TElement>, FilterOperator.GetSupportedOperators<TElement>());
+            }
         }
 
         readonly QueryEngine<TData> m_QueryEngine = new QueryEngine<TData>();
@@ -176,6 +208,7 @@ namespace Unity.Properties.UI.Internal
 
         public override ISearchQuery<TData> Parse(string text)
         {
+            m_QueryEngine.SetGlobalStringComparisonOptions(GlobalStringComparison);
             return new SearchQuery(text, !string.IsNullOrWhiteSpace(text) ? m_QueryEngine.Parse(text) : null);
         }
 

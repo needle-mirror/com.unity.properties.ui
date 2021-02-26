@@ -69,6 +69,7 @@ namespace Unity.Properties.UI
             readonly UxmlStringAttributeDescription m_SearchFilters = new UxmlStringAttributeDescription {name = "search-filters", defaultValue = string.Empty};
             readonly UxmlStringAttributeDescription m_SourceData = new UxmlStringAttributeDescription {name = "source-data", defaultValue = string.Empty};
             readonly UxmlStringAttributeDescription m_FilteredData = new UxmlStringAttributeDescription {name = "filtered-data", defaultValue = string.Empty};
+            readonly UxmlStringAttributeDescription m_GlobalStringComparison = new UxmlStringAttributeDescription {name = "global-string-comparison", defaultValue = StringComparison.OrdinalIgnoreCase.ToString()};
             readonly UxmlStringAttributeDescription m_HandlerType = new UxmlStringAttributeDescription {name = "handler-type", defaultValue = "sync"};
             readonly UxmlIntAttributeDescription m_SearchDelay = new UxmlIntAttributeDescription {name = "search-delay", defaultValue = 200};
             readonly UxmlIntAttributeDescription m_MaxFrameTime = new UxmlIntAttributeDescription {name = "max-frame-time", defaultValue = 33};
@@ -151,6 +152,18 @@ namespace Unity.Properties.UI
                 }
 
                 search.SearchDelay = m_SearchDelay.GetValueFromBag(attributes, context);
+
+                var stringComparisonValue = m_GlobalStringComparison.GetValueFromBag(attributes, context);
+                
+                if (Enum.TryParse(stringComparisonValue, out StringComparison stringComparison))
+                {
+                    search.GlobalStringComparison = stringComparison;
+                }
+                else
+                {
+                    
+                    Debug.LogWarning($"SearchElement has invalid StringComparison=[{stringComparisonValue}]. Expected values are {string.Join(",", Enum.GetNames(typeof(StringComparison)))}.");
+                }
             }
         }
         
@@ -449,15 +462,6 @@ namespace Unity.Properties.UI
         readonly List<FilterPopupElementChoice> m_FilterPopupElementItems = new List<FilterPopupElementChoice>();
         
         /// <summary>
-        /// The desired backend type to use. This defaults to <see cref="SearchBackendType.QuickSearch"/> and should only be changed for tests.
-        /// </summary>
-        internal SearchBackendType BackendType
-        {
-            get => m_SearchEngine.BackendType;
-            set => m_SearchEngine.BackendType = value;
-        }
-        
-        /// <summary>
         /// Gets or sets the search string value. This is the string that appears in the text box.
         /// </summary>
         /// <remarks>
@@ -478,6 +482,15 @@ namespace Unity.Properties.UI
         /// Gets or sets the desired width for the popup element. The default value is 175.
         /// </summary>
         public int FilterPopupWidth { get; set; } = 175;
+
+        /// <summary>
+        /// Global string comparison options for word matching and filter handling (if not overridden).
+        /// </summary>
+        public StringComparison GlobalStringComparison
+        {
+            get => m_SearchEngine.GlobalStringComparison;
+            set => m_SearchEngine.GlobalStringComparison = value;
+        }
 
         /// <summary>
         /// Constructs a new instance of the <see cref="SearchElement"/> control.
@@ -603,6 +616,29 @@ namespace Unity.Properties.UI
         public void HideProgress()
         {
             m_ProgressBar.style.visibility = Visibility.Hidden;
+        }
+
+        /// <summary>
+        /// Registers a custom <see cref="ISearchBackend{TData}"/> for the specified <typeparamref name="TData"/> type.
+        /// </summary>
+        /// <remarks>
+        /// The <see cref="ISearchBackend{TData}"/> MUST be registered before any search data or search filter callbacks are registered.
+        /// </remarks>
+        /// <param name="backend">The <see cref="ISearchBackend{TData}"/> to register.</param>
+        /// <typeparam name="TData">The data type this backend handles.</typeparam>
+        internal void RegisterSearchBackend<TData>(ISearchBackend<TData> backend)
+        {
+            m_SearchEngine.RegisterBackend(backend);
+        }
+
+        /// <summary>
+        /// Unregisters a custom <see cref="ISearchBackend{TData}"/> for the specified <typeparamref name="TData"/> type.
+        /// </summary>
+        /// <param name="backend">The <see cref="ISearchBackend{TData}"/> to unregister.</param>
+        /// <typeparam name="TData">The data type of the backend to unregister.</typeparam>
+        internal void UnregisterSearchBackend<TData>(ISearchBackend<TData> backend)
+        {
+            m_SearchEngine.UnregisterBackend(backend);
         }
 
         /// <summary>
@@ -889,7 +925,12 @@ namespace Unity.Properties.UI
             var isSearchStringNullOrEmpty = string.IsNullOrEmpty(m_SearchStringTextField.text);
             
             SetCancelButtonEnabled(!isSearchStringNullOrEmpty);
-            SetAddFilterButtonEnabled(isSearchStringNullOrEmpty && BackendType == SearchBackendType.QuickSearch && m_FilterPopupElementItems.Count > 0);
+            
+#if QUICKSEARCH_2_1_0_OR_NEWER           
+            SetAddFilterButtonEnabled(isSearchStringNullOrEmpty && m_FilterPopupElementItems.Count > 0);
+#else
+            SetAddFilterButtonEnabled(false);
+#endif
         }
 
         void SetCancelButtonEnabled(bool enabled)
