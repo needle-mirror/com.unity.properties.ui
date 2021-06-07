@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.7.1] - 2021-06-07
+### Changed
+* Updated `com.unity.serialization` to version `1.7.1-preview`.
+
 ## [1.7.0] - 2021-02-26
 ### Changed
 * Updated `com.unity.properties` to version `1.7.0-preview`.
