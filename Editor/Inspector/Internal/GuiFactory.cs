@@ -49,31 +49,52 @@ namespace Unity.Properties.UI.Internal
             ref sbyte value,
             PropertyPath path,
             InspectorVisitorContext visitorContext)
-            => Construct<IntegerField, int, sbyte>(property, ref value, path,
-                visitorContext);
+            => ConstructWithConverter<IntegerField, int, sbyte>(property, ref value, path, visitorContext, s_IntToSByte);
+
+        static readonly Func<int, sbyte> s_IntToSByte = IntToSByte;
+        static sbyte IntToSByte(int arg)
+        {
+            return (sbyte)Mathf.Clamp(arg, sbyte.MinValue, sbyte.MaxValue);
+        }
 
         public static IntegerField ByteField(
             IProperty property,
             ref byte value,
             PropertyPath path,
             InspectorVisitorContext visitorContext)
-            => Construct<IntegerField, int, byte>(property, ref value, path, visitorContext);
+            => ConstructWithConverter<IntegerField, int, byte>(property, ref value, path, visitorContext, s_IntToByte);
+
+        static readonly Func<int, byte> s_IntToByte = IntToByte;
+        static byte IntToByte(int arg)
+        {
+            return (byte)Mathf.Clamp(arg, byte.MinValue, byte.MaxValue);
+        }
 
         public static IntegerField UShortField(
             IProperty property,
             ref ushort value,
             PropertyPath path,
             InspectorVisitorContext visitorContext)
-            => Construct<IntegerField, int, ushort>(property, ref value, path,
-                visitorContext);
+            => ConstructWithConverter<IntegerField, int, ushort>(property, ref value, path, visitorContext, IntToUShort);
 
+        static readonly Func<int, ushort> s_IntToUShort = IntToUShort;
+        static ushort IntToUShort(int arg)
+        {
+            return (ushort)Mathf.Clamp(arg, ushort.MinValue, ushort.MaxValue);
+        }
+        
         public static IntegerField ShortField(
             IProperty property,
             ref short value,
             PropertyPath path,
             InspectorVisitorContext visitorContext)
-            => Construct<IntegerField, int, short>(property, ref value, path,
-                visitorContext);
+            => ConstructWithConverter<IntegerField, int, short>(property, ref value, path, visitorContext, s_IntToShort);
+
+        static readonly Func<int, short> s_IntToShort = IntToShort;
+        static short IntToShort(int arg)
+        {
+            return (short)Mathf.Clamp(arg, short.MinValue, short.MaxValue);
+        }
 
         public static IntegerField IntField(
             IProperty property,
@@ -87,7 +108,13 @@ namespace Unity.Properties.UI.Internal
             ref uint value,
             PropertyPath path,
             InspectorVisitorContext visitorContext)
-            => Construct<LongField, long, uint>(property, ref value, path, visitorContext);
+            => ConstructWithConverter<LongField, long, uint>(property, ref value, path, visitorContext, s_LongToUInt);
+
+        static readonly Func<long, uint> s_LongToUInt = LongToUInt;
+        static uint LongToUInt(long arg)
+        {
+            return (uint)Mathf.Clamp(arg, uint.MinValue, uint.MaxValue);
+        }
 
         public static LongField LongField(
             IProperty property,
@@ -123,7 +150,7 @@ namespace Unity.Properties.UI.Internal
             ref char value,
             PropertyPath path,
             InspectorVisitorContext visitorContext)
-            => Construct<TextField, string, char>(property, ref value, path, visitorContext);
+            => Construct<TextField, string, char>(property, ref value, path, visitorContext, field => field.maxLength = 1);
 
         public static TextField TextField(
             IProperty property,
@@ -409,6 +436,23 @@ namespace Unity.Properties.UI.Internal
             return element;
         }
         
+        static TElement ConstructWithConverter<TElement, TFieldType, TValue>(
+            IProperty property,
+            ref TValue value,
+            PropertyPath path,
+            InspectorVisitorContext visitorContext,
+            Func<TFieldType, TValue> converter,
+            Action<TElement, IProperty> initializer = null
+        )
+            where TElement : BaseField<TFieldType>, new()
+        {
+            var element = ConstructBase<TElement, TFieldType>(property, visitorContext.Parent);
+            initializer?.Invoke(element, property);
+
+            SetCallbacks(ref value, path, visitorContext.Root, element, converter);
+            return element;
+        }
+
         internal static void SetCallbacks<TValue>(
             ref TValue value,
             PropertyPath path,
@@ -444,7 +488,31 @@ namespace Unity.Properties.UI.Internal
                 field.binding = new Binding<TFieldType, TValue>(field, root, path);
             }
 
-            field.RegisterCallback<ChangeEvent<TFieldType>, PropertyPath>(ValueChanged<TFieldType, TValue>, path);
+            field.RegisterCallback<ChangeEvent<TFieldType>, ValueChangedContext<TFieldType, TValue>>(ValueChanged, new ValueChangedContext<TFieldType, TValue>
+            {
+                path = path,
+                converter = null
+            });
+        }
+        
+        internal static void SetCallbacks<TFieldType, TValue>(
+            ref TValue value,
+            PropertyPath path,
+            PropertyElement root,
+            BaseField<TFieldType> field,
+            Func<TFieldType, TValue> converter)
+        {
+            if (TypeConversion.TryConvert(ref value, out TFieldType fieldValue))
+            {
+                field.SetValueWithoutNotify(fieldValue);
+                field.binding = new Binding<TFieldType, TValue>(field, root, path);
+            }
+
+            field.RegisterCallback<ChangeEvent<TFieldType>, ValueChangedContext<TFieldType, TValue>>(ValueChanged, new ValueChangedContext<TFieldType, TValue>
+            {
+                path = path,
+                converter = converter
+            });
         }
         
         internal static void SetCallbacks<TValue>(
@@ -470,23 +538,32 @@ namespace Unity.Properties.UI.Internal
             label.binding = new LabelBinding<TValue>(label, root, path);
         }
 
-        static void ValueChanged<TFieldType, TValue>(ChangeEvent<TFieldType> evt, PropertyPath path)
+        struct ValueChangedContext<TFieldType, TValue>
+        {
+            public PropertyPath path;
+            public Func<TFieldType, TValue> converter;
+        }
+
+        static void ValueChanged<TFieldType, TValue>(ChangeEvent<TFieldType> evt, ValueChangedContext<TFieldType, TValue> context)
         {
             var field = evt.target as BaseField<TFieldType>;
             var fieldValue = evt.newValue;
             var element = field?.GetFirstAncestorOfType<PropertyElement>();
             if (null == element)
                 return;
-
-            if (!TypeConversion.TryConvert(ref fieldValue, out TValue value))
+            
+            TValue value;
+            if (null != context.converter)
+                value = context.converter(fieldValue);
+            else if (!TypeConversion.TryConvert(ref fieldValue, out value))
                 return;
 
-            var oldValue = element.GetValue<TValue>(path);
+            var oldValue = element.GetValue<TValue>(context.path);
 
-            if (!element.TrySetValue(path, value))
+            if (!element.TrySetValue(context.path, value))
                 return;
 
-            var newValue = element.GetValue<TValue>(path);
+            var newValue = element.GetValue<TValue>(context.path);
             if (TypeConversion.TryConvert(ref newValue, out TFieldType newFieldValue))
             {
                 field.SetValueWithoutNotify(newFieldValue);
@@ -496,13 +573,13 @@ namespace Unity.Properties.UI.Internal
             {
                 if (null != oldValue)
                 {
-                    element.NotifyChanged(path);
+                    element.NotifyChanged(context.path);
                 }
             }
             else
             {
                 if (!newValue.Equals(oldValue))
-                    element.NotifyChanged(path);
+                    element.NotifyChanged(context.path);
             }
         }
     }
