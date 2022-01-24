@@ -1,10 +1,21 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
-## [1.7.4] - 2022-01-24
+## [1.8.2] - 2022-01-24
 ### Changed
-* Updated `com.unity.properties` to version `1.7.4-preview`.
-* Updated `com.unity.serialization` to version `1.7.4-preview`.
+* Updated `com.unity.properties` to version `1.8.2-preview`.
+* Updated `com.unity.serialization` to version `1.8.2-preview`.
+
+## [1.8.1] - 2022-01-24
+### Changed
+* Updated `com.unity.properties` to version `1.8.1-preview`.
+* Updated `com.unity.serialization` to version `1.8.1-preview`.
+
+## [1.8.0] - 2022-01-17
+### Changed
+* Updated `com.unity.properties` to version `1.8.0-preview`.
+* Updated `com.unity.serialization` to version `1.8.0-preview`.
+* Update Unity to version '2020.3'.
 
 ## [1.7.3] - 2021-10-14
 ### Fixed
