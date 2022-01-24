@@ -18,25 +18,27 @@ namespace Unity.Properties.UI.Internal
 
             readonly Func<TData, IEnumerable<string>> m_GetSearchDataFunc;
             readonly string[] m_Tokens;
+            readonly StringComparison m_GlobalStringComparison;
 
             public string SearchString { get; }
 
             public ICollection<string> Tokens => m_Tokens;
 
-            public SearchQuery(string searchString, Func<TData, IEnumerable<string>> getSearchDataFunc)
+            public SearchQuery(StringComparison globalStringComparison, string searchString, Func<TData, IEnumerable<string>> getSearchDataFunc)
             {
                 SearchString = searchString;
                 m_Tokens = string.IsNullOrWhiteSpace(SearchString) ? Array.Empty<string>() : SplitTokens(SearchString).ToArray();
                 m_GetSearchDataFunc = getSearchDataFunc;
+                m_GlobalStringComparison = globalStringComparison;
             }
 
             static IEnumerable<string> SplitTokens(string input)
             {
                 s_StringBuilder.Clear();
-                
+
                 var quoted = false;
                 var prev = '\0';
-                
+
                 foreach (var c in input)
                 {
                     // An unquoted space is treated as a filter separator
@@ -47,7 +49,7 @@ namespace Unity.Properties.UI.Internal
                             yield return s_StringBuilder.ToString();
                             s_StringBuilder.Clear();
                         }
-                        
+
                         continue;
                     }
 
@@ -65,7 +67,7 @@ namespace Unity.Properties.UI.Internal
                             s_StringBuilder.Clear();
                         }
                     }
-                    
+
                     prev = c;
                 }
 
@@ -74,13 +76,13 @@ namespace Unity.Properties.UI.Internal
                     yield return s_StringBuilder.ToString();
                 }
             }
-            
+
             public IEnumerable<TData> Apply(IEnumerable<TData> data)
             {
                 var tokens = FilteredSupportedTokens().ToArray();
                 return tokens.Length == 0
                     ? data
-                    : data.Where(d => m_GetSearchDataFunc(d).Any(s => tokens.Any(t => s.IndexOf(t, StringComparison.OrdinalIgnoreCase) >= 0)));
+                    : data.Where(d => m_GetSearchDataFunc(d).Any(s => tokens.Any(t => s.IndexOf(t, m_GlobalStringComparison) >= 0)));
             }
 
             IEnumerable<string> FilteredSupportedTokens()
@@ -102,15 +104,15 @@ namespace Unity.Properties.UI.Internal
                 }
             }
         }
-        
+
         public override ISearchQuery<TData> Parse(string text)
         {
-            return new SearchQuery(text, GetSearchData);
+            return new SearchQuery(this.GlobalStringComparison, text, GetSearchData);
         }
 
         public override void AddSearchFilterProperty(string token, PropertyPath path, string[] supportedOperatorTypes = null)
         {
-            
+
         }
 
         public override void AddSearchFilterCallback<TFilter>(string token, Func<TData, TFilter> getFilterDataFunc, string[] supportedOperatorTypes = null)

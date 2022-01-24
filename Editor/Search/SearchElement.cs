@@ -4,6 +4,9 @@ using JetBrains.Annotations;
 using NUnit.Framework;
 using Unity.Properties.Internal;
 using Unity.Properties.UI.Internal;
+using UnityEditor;
+using UnityEditor.PackageManager;
+using UnityEditor.PackageManager.Requests;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -53,6 +56,8 @@ namespace Unity.Properties.UI
     [UsedImplicitly]
     public sealed class SearchElement : VisualElement, INotifyValueChanged<string>
     {
+        internal const StringComparison DefaultGlobalStringComparison = StringComparison.OrdinalIgnoreCase;
+
         /// <summary>
         /// Instantiates a SearchElement using the data read from a UXML file.
         /// </summary>
@@ -69,7 +74,7 @@ namespace Unity.Properties.UI
             readonly UxmlStringAttributeDescription m_SearchFilters = new UxmlStringAttributeDescription {name = "search-filters", defaultValue = string.Empty};
             readonly UxmlStringAttributeDescription m_SourceData = new UxmlStringAttributeDescription {name = "source-data", defaultValue = string.Empty};
             readonly UxmlStringAttributeDescription m_FilteredData = new UxmlStringAttributeDescription {name = "filtered-data", defaultValue = string.Empty};
-            readonly UxmlStringAttributeDescription m_GlobalStringComparison = new UxmlStringAttributeDescription {name = "global-string-comparison", defaultValue = StringComparison.OrdinalIgnoreCase.ToString()};
+            readonly UxmlStringAttributeDescription m_GlobalStringComparison = new UxmlStringAttributeDescription {name = "global-string-comparison", defaultValue = DefaultGlobalStringComparison.ToString()};
             readonly UxmlStringAttributeDescription m_HandlerType = new UxmlStringAttributeDescription {name = "handler-type", defaultValue = "sync"};
             readonly UxmlIntAttributeDescription m_SearchDelay = new UxmlIntAttributeDescription {name = "search-delay", defaultValue = 200};
             readonly UxmlIntAttributeDescription m_MaxFrameTime = new UxmlIntAttributeDescription {name = "max-frame-time", defaultValue = 33};
@@ -301,20 +306,64 @@ namespace Unity.Properties.UI
         }
 
         /// <summary>
+        /// The install Quick Search dropdown displayed when the search element has filters but Quick Search package is not installed.
+        /// </summary>
+        class InstallQuickSearchPopupElement : PopupElement
+        {
+            const float k_Height = 78;
+            const float k_Width = 150;
+            const string k_QuickSearchPackageName = "com.unity.quicksearch";
+            const string k_QuickSearchPackageVersion = "2.0.2";
+
+            AddRequest m_Request;
+
+            protected override Vector2 GetSize() => new Vector2(k_Width, k_Height);
+
+            public InstallQuickSearchPopupElement()
+            {
+                Internal.Resources.Templates.Common.AddStyles(this);
+                Internal.Resources.Templates.InstallQuickSearchPopup.Clone(this);
+                this.Q<Button>("install-quick-search-button").clickable.clicked += InstallQuickSearchPackage;
+            }
+
+            void InstallQuickSearchPackage()
+            {
+                m_Request = Client.Add(string.Concat(k_QuickSearchPackageName, "@", k_QuickSearchPackageVersion));
+                EditorApplication.update += Progress;
+
+                Close();
+            }
+
+            void Progress()
+            {
+                if (m_Request.IsCompleted)
+                {
+                    if (m_Request.Status == StatusCode.Success)
+                        Debug.Log("Installed: " + m_Request.Result.packageId);
+                    else if (m_Request.Status >= StatusCode.Failure)
+                        Debug.LogError(m_Request.Error.message);
+
+                    EditorApplication.update -= Progress;
+                }
+            }
+
+        }
+
+        /// <summary>
         /// The add filter dropdown used to show which filters are available and quickly add them to the search string.
         /// </summary>
         class FilterPopupElement : PopupElement
         {
-            const int kHeaderHeight = 28;
-            const int kElementHeight = 16;
-            
+            const int k_HeaderHeight = 28;
+            const int k_ElementHeight = 16;
+
             readonly float m_Width;
             readonly SearchElement m_SearchElement;
             readonly VisualElement m_Choices;
 
             int m_ElementCount;
-            
-            protected override Vector2 GetSize() => new Vector2(m_Width, kHeaderHeight + kElementHeight * m_ElementCount);
+
+            protected override Vector2 GetSize() => new Vector2(m_Width, k_HeaderHeight + k_ElementHeight * m_ElementCount);
 
             /// <summary>
             /// Constructs a new instance of the <see cref="SearchElement"/> control.
@@ -492,6 +541,9 @@ namespace Unity.Properties.UI
             set => m_SearchEngine.GlobalStringComparison = value;
         }
 
+        // Internal for tests
+        internal SearchEngine GetSearchEngine() => m_SearchEngine;
+
         /// <summary>
         /// Constructs a new instance of the <see cref="SearchElement"/> control.
         /// </summary>
@@ -533,13 +585,18 @@ namespace Unity.Properties.UI
             m_AddFilterButton.clickable.clicked += () =>
             {
                 if (m_FilterPopupElementItems.Count == 0) return;
-                
+
+#if QUICKSEARCH_2_0_2_OR_NEWER || USE_QUICK_SEARCH_MODULE || USE_SEARCH_MODULE
                 var filterDropdown = new FilterPopupElement(this, FilterPopupWidth);
 
                 foreach (var item in m_FilterPopupElementItems)
                     filterDropdown.AddPopupItem(item.Token, item.Text, item.Tooltip);
 
                 filterDropdown.ShowAtPosition(m_AddFilterButton.worldBound);
+#else
+                var popup = new InstallQuickSearchPopupElement();
+                popup.ShowAtPosition(m_AddFilterButton.worldBound);
+#endif
             };
 
             HideProgress();
@@ -923,14 +980,9 @@ namespace Unity.Properties.UI
         void UpdateControls()
         {
             var isSearchStringNullOrEmpty = string.IsNullOrEmpty(m_SearchStringTextField.text);
-            
+
             SetCancelButtonEnabled(!isSearchStringNullOrEmpty);
-            
-#if QUICKSEARCH_2_1_0_OR_NEWER           
             SetAddFilterButtonEnabled(isSearchStringNullOrEmpty && m_FilterPopupElementItems.Count > 0);
-#else
-            SetAddFilterButtonEnabled(false);
-#endif
         }
 
         void SetCancelButtonEnabled(bool enabled)

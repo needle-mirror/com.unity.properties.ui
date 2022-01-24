@@ -1,0 +1,13 @@
+.unity-properties__install-quick-search__container {
+    margin: 5px;
+}
+
+.unity-properties__install-quick-search__header {
+    white-space: normal;
+    margin-bottom: 10px;
+    font-size: 10px;
+}
+
+.unity-properties__install-quick-search__button {
+    margin: 0;
+}

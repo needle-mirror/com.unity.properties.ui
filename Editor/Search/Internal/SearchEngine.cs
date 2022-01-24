@@ -71,8 +71,8 @@ namespace Unity.Properties.UI.Internal
 
     class SearchEngine
     {
-        StringComparison m_GlobalStringComparison;
-        
+        StringComparison m_GlobalStringComparison = SearchElement.DefaultGlobalStringComparison;
+
         readonly Dictionary<Type, ISearchBackend> m_SearchBackends = new Dictionary<Type, ISearchBackend>();
 
         List<SearchFilterProperty> SearchFilterProperties { get; } = new List<SearchFilterProperty>();
@@ -194,8 +194,10 @@ namespace Unity.Properties.UI.Internal
             if (m_SearchBackends.TryGetValue(typeof(TData), out var instance) && !(instance is SearchBackend<TData>))
                 throw new InvalidOperationException($"Failed to register ISearchBackend for Type=[{typeof(TData)}]. Type has already been registered.");
             
+
             m_SearchBackends[typeof(TData)] = backend;
-            
+            backend.GlobalStringComparison = GlobalStringComparison;
+
             // Register any property based search data.
             foreach (var searchData in SearchDataProperties)
                 backend.AddSearchDataProperty(searchData.Path);
@@ -222,7 +224,7 @@ namespace Unity.Properties.UI.Internal
         static ISearchBackend<TData> CreateDefaultBackend<TData>()
         {
             // Default to using quick search if the package is installed. Otherwise fallback to a simple implementation using properties.
-#if QUICKSEARCH_2_1_0_OR_NEWER
+#if QUICKSEARCH_2_0_2_OR_NEWER
             return new QuickSearchBackend<TData>();
 #else
             return new PropertiesSearchBackend<TData>();
@@ -237,8 +239,9 @@ namespace Unity.Properties.UI.Internal
             }
 
             var backend = CreateDefaultBackend<TData>();
-            
+
             m_SearchBackends[typeof(TData)] = backend;
+            backend.GlobalStringComparison = GlobalStringComparison;
 
             // Register any property based search data.
             foreach (var searchDataProperty in SearchDataProperties)
@@ -257,6 +260,15 @@ namespace Unity.Properties.UI.Internal
                 searchFilterCallback.Register(backend);
             
             return backend;
+        }
+
+        // Internal for tests
+        internal IEnumerable<ISearchBackend> GetRegisteredBackends()
+        {
+            foreach (var backend in m_SearchBackends.Values)
+            {
+                yield return backend;
+            }
         }
     }
     

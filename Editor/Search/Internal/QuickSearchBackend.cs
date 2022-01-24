@@ -1,10 +1,10 @@
-#if QUICKSEARCH_3_0_0_OR_NEWER
+#if QUICKSEARCH_3_0_0_OR_NEWER || USE_SEARCH_MODULE || USE_QUICK_SEARCH_MODULE
 using UnityEditor.Search;
-#elif QUICKSEARCH_2_1_0_OR_NEWER
+#elif QUICKSEARCH_2_0_2_OR_NEWER
 using Unity.QuickSearch;
 #endif
 
-#if QUICKSEARCH_2_1_0_OR_NEWER
+#if QUICKSEARCH_2_0_2_OR_NEWER || USE_SEARCH_MODULE || USE_QUICK_SEARCH_MODULE
 using System;
 using System.Collections.Generic;
 using System.Linq;

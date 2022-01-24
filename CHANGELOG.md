@@ -1,6 +1,19 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.7.4] - 2022-01-24
+### Changed
+* Updated `com.unity.properties` to version `1.7.4-preview`.
+* Updated `com.unity.serialization` to version `1.7.4-preview`.
+
+## [1.7.3] - 2021-10-14
+### Fixed
+* `SearchElement.GlobalStringComparison` property is now correctly propagated to underlying backends.
+* `PropertiesSearchBackend` uses the configured `GlobalStringComparison` instead of `OrdinalIgnoreCase`.
+
+### Added
+* Added call to action to install the Quick Search package when using `SearchElement` with filters.
+
 ## [1.7.2] - 2021-08-06
 ### Changed
 * Updated `com.unity.properties` to version `1.7.1-preview`.
