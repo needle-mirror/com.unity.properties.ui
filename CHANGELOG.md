@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.7.5] - 2022-01-25
+### Changed
+* Updated `com.unity.properties` to version `1.7.5-preview`.
+* Updated `com.unity.serialization` to version `1.7.5-preview`.
+
 ## [1.7.4] - 2022-01-24
 ### Changed
 * Updated `com.unity.properties` to version `1.7.4-preview`.

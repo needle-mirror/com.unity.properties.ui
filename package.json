@@ -1,7 +1,7 @@
 {
   "name": "com.unity.properties.ui",
   "displayName": "Properties UI",
-  "version": "1.7.4-preview",
+  "version": "1.7.5-preview",
   "unity": "2020.1",
   "unityRelease": "0f1",
   "description": "Utilities to generate UIElements-based visual trees from types backed by the properties package.",
@@ -11,17 +11,17 @@
     "ui"
   ],
   "dependencies": {
-    "com.unity.properties": "1.7.4-preview",
-    "com.unity.serialization": "1.7.4-preview",
+    "com.unity.properties": "1.7.5-preview",
+    "com.unity.serialization": "1.7.5-preview",
     "com.unity.modules.uielements": "1.0.0",
     "com.unity.test-framework.performance": "2.3.1-preview"
   },
   "upmCi": {
-    "footprint": "0b7315de30cf444465248911ce94875ba870a3f8"
+    "footprint": "cb16a66dd84241b53b6681d218b2b05b04c61032"
   },
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.properties.git",
     "type": "git",
-    "revision": "84ae95efef203753ec32a75ac11f6abed94df12d"
+    "revision": "e8269577044b782d9d9907281145d999429d647b"
   }
 }
