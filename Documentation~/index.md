@@ -1,6 +1,6 @@
 # Properties UI
 
-The `com.unity.properties.ui` package offers utilities to generate UIElements-based visual trees from data using the `com.unity.properties` package. This API is found in the `Unity.Properties.UI.Editor` assembly (referenced automatically for convenience), under the `Unity.Properties.UI` namespace.
+The `com.unity.properties.ui` package offers utilities to generate UIToolkit-based visual trees from data using the `com.unity.properties` package. This API is found in the `Unity.Properties.UI.Editor` assembly (referenced automatically for convenience), under the `Unity.Properties.UI` namespace.
 
 The main goal of this package is to allow:
 * the creation of generic inspector-like visual trees,
@@ -12,9 +12,11 @@ This manual targets developers that intends to create custom inspectors.
 
 # Glossary
 
-**Custom Inspectors** are drawers based on a given type. These drawers will be used for every field of that type.
+**Inspectors** are drawers based on a given type. These drawers will be used for the root instance.
 
-**Property Drawers** are drawers based on an attribute. Theses drawers will be used when a field is tagged with a `PropertyAttribute`. This allows to draw fields of heterogeneous types in a similar fashion.
+**Property Inspectors** are drawers based on a given type. These drawers will be used for every field of that type.
+
+**Property Attribute Inspectors** are drawers based on an attribute. Theses drawers will be used when a field is tagged with a `PropertyAttribute`. This allows to draw fields of heterogeneous types in a similar fashion.
 
 
 # Getting Started
@@ -51,9 +53,9 @@ namespace Unity.Properties.Samples
 
         public void OnEnable()
         {
-            var propertyElement = new PropertyElement();
-            propertyElement.SetTarget(new WindowData());
-            rootVisualElement.Add(propertyElement);
+            var inspectorElement = new InspectorElement();
+            inspectorElement.SetTarget(new WindowData());
+            rootVisualElement.Add(inspectorElement);
         }
     }
 }
@@ -61,7 +63,7 @@ namespace Unity.Properties.Samples
 
 ![](images/SampleWindow_01.png)
 
-**Creating a custom inspector**
+**Creating an  inspector**
 
 ```c#
 namespace Unity.Properties.Samples
@@ -69,11 +71,33 @@ namespace Unity.Properties.Samples
     using Unity.Properties.UI;
     using UnityEngine.UIElements;
 
-    class WindowVersionInspector : Inspector<SampleWindow.WindowVersion>
+    class WindowDataInspector : Inspector<SampleWindow.WindowData>
     {
         public override VisualElement Build()
         {
-            var version = Value;
+            var windowData = Target;
+            var root = DoDefaultGui();
+            root.style.backgroundColor = new Color(46/255.0f, 46/255.0f, 46/255.0f);
+            return root;
+        }
+    }
+}
+```
+![](images/SampleWindow_02.png)
+
+**Creating a property inspector**
+
+```c#
+namespace Unity.Properties.Samples
+{
+    using Unity.Properties.UI;
+    using UnityEngine.UIElements;
+
+    class WindowVersionPropertyInspector : PropertyInspector<SampleWindow.WindowVersion>
+    {
+        public override VisualElement Build()
+        {
+            var version = Target;
             var valueLabel = new Label {text = $"Version {version.Major}.{version.Minor}.{version.Patch}"}; 
             
             valueLabel.style.alignSelf = Align.FlexEnd;
@@ -82,9 +106,9 @@ namespace Unity.Properties.Samples
     }
 }
 ```
-![](images/SampleWindow_02.png)
+![](images/SampleWindow_03.png)
 
-**Creating a property drawer**
+**Creating a property attribute inspector**
 ```c#
 namespace Unity.Properties.Samples
 {
@@ -97,12 +121,12 @@ namespace Unity.Properties.Samples
         public int FontSize = 16;
     }
     
-    public class CenteredLabelDrawer : PropertyDrawer<string, CenteredLabelAttribute>
+    public class CenteredLabelAttributeInspector : PropertyInspector<string, CenteredLabelAttribute>
     {
         public override VisualElement Build()
         {
             var attribute = DrawerAttribute;
-            var label = new Label {text = Value};
+            var label = new Label {text = Target};
             label.style.fontSize = attribute.FontSize;
             label.style.alignSelf = Align.Center;
             return label;
@@ -119,7 +143,7 @@ public class WindowData
     public WindowVersion Version = new WindowVersion();
 }
 ```
-![](images/SampleWindow_03.png)
+![](images/SampleWindow_04.png)
 
 **Built-in data-binding**
 ```c#
@@ -150,7 +174,7 @@ namespace Unity.Properties.Samples
         {
             m_Data = new Data();
             
-            var propertyElement = new PropertyElement();
+            var propertyElement = new InspectorElement();
             propertyElement.SetTarget(m_Data);
             rootVisualElement.Add(propertyElement);
             rootVisualElement.Add(new Button(IncrementValue){ text = "Increment value"});
@@ -164,7 +188,7 @@ namespace Unity.Properties.Samples
 }
 ```
 
-![](images/SampleWindow_04.gif)
+![](images/SampleWindow_05.gif)
 
 **Manual data-binding**
 ```c#
@@ -191,7 +215,7 @@ namespace Unity.Properties.Samples
             
             // there is no automatic binding between int => label, so we will use the Update method to update the
             // text of the label to match the value.
-            m_ValueAsLabel = new Label(Value.Int.ToString());
+            m_ValueAsLabel = new Label(Target.Int.ToString());
             m_ValueAsLabel.style.alignSelf = Align.Center;
             m_ValueAsLabel.style.width = 75;
             root.Add(m_ValueAsLabel);
@@ -202,13 +226,13 @@ namespace Unity.Properties.Samples
 
         public override void Update()
         {
-            m_ValueAsLabel.text = Value.Int.ToString();
+            m_ValueAsLabel.text = Target.Int.ToString();
         }
     }
 }
 ```
 
-![](images/SampleWindow_05.gif)
+![](images/SampleWindow_06.gif)
 
 These samples focus on code-driven workflows. It is possible to use `uxml` and `uss` files to drive the look and feel of a custom inspector or property drawer. Setting the `binding-path` attribute in `uxml` files will kick-off automatic data-binding.
 
@@ -280,7 +304,7 @@ namespace Unity.Properties.Samples
             };
 
             var card = new UICard {Character = character};
-            var cardElement = new PropertyElement();
+            var cardElement = new InspectorElement();
             cardElement.SetTarget(card);
             rootVisualElement.Add(cardElement);
         }
@@ -421,16 +445,12 @@ namespace Unity.Properties.Samples
 
 # Performance Considerations
 
-## PropertyElement
+## InspectorElement & PropertyElement
 
-`Unity.Properties.UI.PropertyElement` will generate new `VisualElement` instances whenever a new target is set, which can result in heavy allocation-spikes for large data set. We're looking at ways to pool and reuse visual trees so that these spikes occur less often.
+`Unity.Properties.UI.InspectorElement` and `Unity.Properties.UI.PropertyElement` will generate new `VisualElement` instances whenever a new target is set, which can result in heavy allocation-spikes for large data set. We're looking at ways to pool and reuse visual trees so that these spikes occur less often.
 
 # Other Considerations
 
 ## Multi-selection
 
-At the moment, it is not possible to bind multiple targets to a `Unity.Properties.UI.PropertyElement`. This is mainly because `UIElements` doesn't have a way to show mixed values. When this feature will become available, we will add support for multiple targets.
-
-## Inspectors and Drawers
-
-Specifying an inspector or a drawer for a base type is currently **not** supported. This will be added in a future version.
+At the moment, it is not possible to bind multiple targets to a `Unity.Properties.UI.InspectorElement` or a `Unity.Properties.UI.PropertyElement`.

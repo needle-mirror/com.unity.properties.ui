@@ -1,5 +1,5 @@
 using System;
-using Unity.Properties.Editor;
+using Unity.Properties;
 
 namespace Unity.Properties.UI.Internal
 {

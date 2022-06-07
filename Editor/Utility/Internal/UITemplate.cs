@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI.Internal
@@ -6,17 +7,21 @@ namespace Unity.Properties.UI.Internal
     readonly struct UITemplate
     {
         public static UITemplate Null = default;
+        public static VisualElement m_Container;
         
         readonly string m_UxmlPath;
         readonly string m_UssPath;
+        readonly string m_Name;
 
         VisualTreeAsset Template => EditorGUIUtility.Load(m_UxmlPath) as VisualTreeAsset;
         StyleSheet StyleSheet => AssetDatabase.LoadAssetAtPath<StyleSheet>(m_UssPath);
 
         public UITemplate(string name)
         {
-            m_UxmlPath = Resources.UxmlFromName(name);
-            m_UssPath = Resources.UssFromName(name);
+            m_Name = name;
+            m_UxmlPath = Resources.UxmlFromName(m_Name);
+            m_UssPath = Resources.UssFromName(m_Name);
+            m_Container = new VisualElement();
         }
 
         /// <summary>
@@ -28,6 +33,18 @@ namespace Unity.Properties.UI.Internal
             root = CloneTemplate(root);
             AddStyleSheetSkinVariant(root);
             return root;
+        }
+        
+        public VisualElement CloneWithoutTemplateContainer()
+        {
+            m_Container = CloneTemplate(m_Container);
+            if (m_Container.childCount > 1)
+                Debug.LogWarning($"{nameof(UITemplate)}.{nameof(CloneWithoutTemplateContainer)} should only be called with uxml files containing a single root. Template called `{m_Name}` contains {m_Container.childCount} roots.");
+
+            var child = m_Container[0];
+            AddStyleSheetSkinVariant(child);
+            m_Container.Clear();
+            return child;
         }
 
         public void AddStyles(VisualElement element)

@@ -9,22 +9,6 @@ using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI.Tests
 {
-    /// <summary>
-    /// The search engine backend type to use for tests.
-    /// </summary>
-    enum SearchBackendType
-    {
-        /// <summary>
-        /// A simple implementation used as a fallback.
-        /// </summary>
-        Properties,
-
-        /// <summary>
-        /// The primary search engine. This is only available if the QuickSearch package is installed.
-        /// </summary>
-        QuickSearch
-    }
-
     [TestFixture, UI]
     sealed partial class SearchElementTests
     {
@@ -61,7 +45,7 @@ namespace Unity.Properties.UI.Tests
             m_Window.rootVisualElement.Clear();
         }
 
-        class DataContainerInspector : Inspector<TestDataContainerWithCustomInspector>
+        class DataContainerInspector : PropertyInspector<TestDataContainerWithCustomInspector>
         {
             public override VisualElement Build()
             {
@@ -97,7 +81,7 @@ namespace Unity.Properties.UI.Tests
         [Test]
         public void Search_WithGlobalStringComparisonOption_IsPropagatedToExistingBackends()
         {
-            var backend = CreateSearchBackend<TestData>(SearchBackendType.Properties);
+            var backend = CreateSearchBackend<TestData>();
             backend.GlobalStringComparison = StringComparison.CurrentCulture;
             m_SearchElement.RegisterSearchBackend(backend);
 
@@ -114,7 +98,7 @@ namespace Unity.Properties.UI.Tests
         public void Search_WithGlobalStringComparisonOption_IsPropagatedToAddedBackends()
         {
             m_SearchElement.GlobalStringComparison = StringComparison.Ordinal;
-            var backend = CreateSearchBackend<TestData>(SearchBackendType.Properties);
+            var backend = CreateSearchBackend<TestData>();
             backend.GlobalStringComparison = StringComparison.CurrentCulture;
 
             m_SearchElement.RegisterSearchBackend(backend);
@@ -201,7 +185,6 @@ namespace Unity.Properties.UI.Tests
         [Test]
         [TestCase("id<10", "id:Id", 10)]
         [TestCase("x<50", "x:Position.x", 5)]
-        [TestRequires_QUICKSEARCH_2_0_2_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
         public void Search_WithSearchFilterProperties_ReturnsFilteredResults(string searchString, string searchFilterProperties, int expectedCount)
         {
             var originalData = Generate(100);
@@ -426,7 +409,6 @@ namespace Unity.Properties.UI.Tests
         }
 
         [Test]
-        [TestRequires_QUICKSEARCH_2_0_2_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
         public void Search_CustomInspectorWithCollectionFilter_ReturnsFilteredResults()
         {
             var container = new TestDataContainerWithCustomInspector
@@ -464,7 +446,6 @@ namespace Unity.Properties.UI.Tests
         }
 
         [Test]
-        [TestRequires_QUICKSEARCH_2_0_2_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
         public void Search_CustomInspectorWithCollectionFilter_WhenCollectionIsIEnumerable_ReturnsFilteredResults()
         {
             var container = new TestDataContainerWithCustomInspector
@@ -502,13 +483,10 @@ namespace Unity.Properties.UI.Tests
         }
 
         [Test]
-        [TestRequires_QUICKSEARCH_2_0_2_OR_NEWER("Filtering is only supported using the com.unity.quicksearch package.")]
-        [TestCase(SearchBackendType.Properties)]
-        [TestCase(SearchBackendType.QuickSearch)]
-        public void Search_TokensShouldBeEmptyOnEmptySearchString(SearchBackendType backendType)
+        public void Search_TokensShouldBeEmptyOnEmptySearchString()
         {
             var searchElement = new SearchElement();
-            searchElement.RegisterSearchBackend(CreateSearchBackend<TestData>(backendType));
+            searchElement.RegisterSearchBackend(CreateSearchBackend<TestData>());
 
             searchElement.RegisterSearchQueryHandler<TestData>(q =>
             {
@@ -524,65 +502,10 @@ namespace Unity.Properties.UI.Tests
             searchElement.Search("   ");
         }
 
-        static IEnumerable<string> Search_PropertiesBackendSkipFilterTokens_SourceData()
-        {
-            var supportedTokens = FilterOperator.GetSupportedOperators<EquatableAndComparableTestData>();
-            foreach (var supportedToken in supportedTokens)
-            {
-                yield return $"c{supportedToken}42";
-                yield return $"c{supportedToken}42  ";
-                yield return $"c{supportedToken}42 H";
-                yield return $"c{supportedToken}42 h";
-            }
-            yield return "h";
-            yield return "H";
-            yield return "";
-            yield return "  ";
-        }
-
         [Test]
-        [TestCaseSource(nameof(Search_PropertiesBackendSkipFilterTokens_SourceData))]
-        public void Search_PropertiesBackendSkipFilterTokens(string input)
+        public void Search_BackendTokensParserHandlesDoubleQuotes()
         {
-            var searchElement = new SearchElement();
-
-            searchElement.RegisterSearchBackend(CreateSearchBackend<EquatableAndComparableTestData>(SearchBackendType.Properties));
-
-            var sourceData = new[]
-            {
-                new EquatableAndComparableTestData { Name = "hello" },
-                new EquatableAndComparableTestData { Name = "hola" },
-            };
-            EquatableAndComparableTestData[] filtered = null;
-
-            searchElement.RegisterSearchQueryHandler<EquatableAndComparableTestData>(q => filtered = q.Apply(sourceData).ToArray());
-            searchElement.AddSearchDataProperty(new PropertyPath(nameof(EquatableAndComparableTestData.Name)));
-            searchElement.AddSearchFilterPopupItem("c", "component type");
-
-            searchElement.Search(input);
-            Assert.That(filtered, Is.EquivalentTo(sourceData));
-        }
-
-        [Test]
-        public void Search_BackendTokensParserHandlesDoubleQuotes([Values(SearchBackendType.Properties, SearchBackendType.QuickSearch)] SearchBackendType type)
-        {
-            SearchBackend<string> backend = null;
-
-            switch (type)
-            {
-                case SearchBackendType.Properties:
-                    backend = new PropertiesSearchBackend<string>();
-                    break;
-                case SearchBackendType.QuickSearch:
-#if QUICKSEARCH_2_0_2_OR_NEWER
-                    backend = new QuickSearchBackend<string>();
-#else
-                    Assert.Pass("QuickSearchBackend needs to be available for this test");
-#endif
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
-            }
+            SearchBackend<string> backend =  new QuickSearchBackend<string>();
 
             var query = backend.Parse("filter:\"Hello World\" \"Hello\" World filter:\"  Hello filter:\"World");
             Assert.That(query.Tokens, Is.EquivalentTo(new []
@@ -595,20 +518,95 @@ namespace Unity.Properties.UI.Tests
             }));
         }
 
-        static ISearchBackend<TData> CreateSearchBackend<TData>(SearchBackendType type)
+        [Test]
+        public void Search_WhenSearchDataCallbackReturnsNull_DoesNotThrow()
         {
-            switch (type)
+            var container = new TestDataContainer
             {
-                case SearchBackendType.Properties:
-                    return new PropertiesSearchBackend<TData>();
-                case SearchBackendType.QuickSearch:
-#if QUICKSEARCH_2_0_2_OR_NEWER
-                    return new QuickSearchBackend<TData>();
-#endif
-                    throw new InvalidOperationException("QuickSearch needs to be installed to tests this backend");
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
-            }
+                ValidSourceData = Generate(100),
+                ValidDestinationData = new List<TestData>()
+            };
+
+            m_PropertyElement.SetTarget(container);
+            m_SearchElement.RegisterSearchQueryHandler(m_PropertyElement, TestDataContainer.ValidSourceDataPath, TestDataContainer.ValidDestinationDataPath);
+            m_SearchElement.AddSearchDataCallback<TestData>(_ => null);
+
+            Assert.DoesNotThrow(() =>
+            {
+                m_SearchElement.Search("");
+            });
+        }
+
+        [Test]
+        public void Search_WhenSearchDataCallbackReturnsNullElement_DoesNotThrow()
+        {
+            var container = new TestDataContainer
+            {
+                ValidSourceData = Generate(100),
+                ValidDestinationData = new List<TestData>()
+            };
+
+            m_PropertyElement.SetTarget(container);
+            m_SearchElement.RegisterSearchQueryHandler(m_PropertyElement, TestDataContainer.ValidSourceDataPath, TestDataContainer.ValidDestinationDataPath);
+            m_SearchElement.AddSearchDataCallback<TestData>(_ =>
+            {
+                return new [] { "a", "b", null, "d" };
+            });
+
+            Assert.DoesNotThrow(() =>
+            {
+                m_SearchElement.Search("");
+            });
+        }
+        
+        [Test]
+        public void Search_AddSearchFilterCallback_WithCustomOperatorHandler()
+        {
+            var container = new TestDataContainer()
+            {
+                ValidSourceData = Generate(100),
+                ValidDestinationData = new List<TestData>()
+            };
+
+            container.ValidSourceData[0].NestedEnumerable = new[]
+            {
+                new TestData.NestedStructWithValues { A = 1, B = 10, C = 2.3f }
+            };
+
+            container.ValidSourceData[1].NestedEnumerable = new[]
+            {
+                new TestData.NestedStructWithValues { A = 2, B = 10, C = 2.3f },
+                new TestData.NestedStructWithValues { A = 2, B = 20, C = 2.4f }
+            };
+
+            container.ValidSourceData[2].NestedEnumerable = new[]
+            {
+                new TestData.NestedStructWithValues { A = 3, B = 10, C = 2.3f },
+                new TestData.NestedStructWithValues { A = 3, B = 20, C = 2.4f },
+                new TestData.NestedStructWithValues { A = 3, B = 30, C = 2.5f }
+            };
+            
+            m_PropertyElement.SetTarget(container);
+            m_SearchElement.RegisterSearchQueryHandler(m_PropertyElement, TestDataContainer.ValidSourceDataPath, TestDataContainer.ValidDestinationDataPath);
+            m_SearchElement.AddSearchFilterCallback<TestData, IEnumerable<int>>("a", SearchFilterCallback);
+            m_SearchElement.AddSearchOperatorHandler<IEnumerable<int>, int>(">=", (lhs, rhs) => lhs.Any(e => e >= rhs));
+            m_SearchElement.Search("a>=2");
+
+            Assert.That(container.ValidDestinationData.Count, Is.EqualTo(2));
+        }
+
+        IEnumerable<int> SearchFilterCallback(TestData data)
+        {
+            if (null == data.NestedEnumerable)
+                yield break;
+
+            foreach (var value in data.NestedEnumerable)
+                yield return value.A;
+        }
+        
+        static ISearchBackend<TData> CreateSearchBackend<TData>()
+        {
+            return new QuickSearchBackend<TData>();
         }
 
         class TestData
@@ -617,6 +615,13 @@ namespace Unity.Properties.UI.Tests
             {
                 public string Value;
             }
+            
+            public struct NestedStructWithValues
+            {
+                public int A;
+                public int B;
+                public float C;
+            }
 
             [CreateProperty] public int Id { get; set; }
             [CreateProperty] public string Name { get; set; }
@@ -624,7 +629,9 @@ namespace Unity.Properties.UI.Tests
             [CreateProperty] public bool Active { get; set; }
             [CreateProperty] public NestedStruct Nested { get; set; }
             [CreateProperty] public string[] StringArray { get; set; }
-            [CreateProperty] public IEnumerable<string> StringEnumerable { get; set; }
+            [CreateProperty] public IEnumerable<string> StringEnumerable { get; set; }            
+            [CreateProperty] public IEnumerable<NestedStructWithValues> NestedEnumerable { get; set; }
+            [CreateProperty] public int[] IntArray { get; set; }
         }
 
         class EquatableAndComparableTestData : IEquatable<EquatableAndComparableTestData>, IComparable<EquatableAndComparableTestData>

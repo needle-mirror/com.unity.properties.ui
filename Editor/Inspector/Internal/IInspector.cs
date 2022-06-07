@@ -29,7 +29,7 @@ namespace Unity.Properties.UI.Internal
         /// </summary>
         PropertyPath PropertyPath { get; }
         
-        PropertyPath.Part Part { get; }
+        PropertyPathPart Part { get; }
 
         /// <summary>
         /// The type of the declared value type.

@@ -17,13 +17,11 @@ namespace Unity.Properties.UI.Internal
         /// <returns><see langword="true"/> if this is the first time encountering this object; otherwise, <see langword="false"/>.</returns>
         internal bool PushReference(object value, PropertyPath path)
         {
-            if (m_References.Add(value))
-            {
-                m_ReferenceToPath[value] = path;
-                return true;
-            }
+            if (!m_References.Add(value))
+                return false;
 
-            return false;
+            m_ReferenceToPath[value] = path;
+            return true;
         }
 
         /// <summary>
@@ -41,9 +39,9 @@ namespace Unity.Properties.UI.Internal
         /// <returns>Path to the first visited object.</returns>
         internal PropertyPath GetPath(object value)
         {
-            return m_ReferenceToPath.TryGetValue(value, out var path) ? path : null;
+            return m_ReferenceToPath.TryGetValue(value, out var path) ? path : default;
         }
-        
+
         /// <summary>
         /// Clears this object for re-use. This is an internal method.
         /// </summary>

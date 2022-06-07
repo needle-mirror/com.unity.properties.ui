@@ -1,11 +1,11 @@
 {
     "name": "Unity.Properties.UI.Editor",
+    "rootNamespace": "",
     "references": [
         "Unity.Properties",
-        "Unity.Properties.Editor",
         "Unity.Properties.UI",
-        "Unity.Serialization.Editor",
-        "com.unity.quicksearch"
+        "Unity.Serialization",
+        "Unity.Serialization.Editor"
     ],
     "includePlatforms": [
         "Editor"
@@ -18,14 +18,10 @@
     "defineConstraints": [],
     "versionDefines": [
         {
-            "name": "com.unity.quicksearch",
-            "expression": "2.0.2",
-            "define": "QUICKSEARCH_2_0_2_OR_NEWER"
-        },
-        {
-            "name": "com.unity.quicksearch",
-            "expression": "3.0.0-preview.2",
-            "define": "QUICKSEARCH_3_0_0_OR_NEWER"
+            "name": "Unity",
+            "expression": "2022.2.0a10",
+            "define": "UNITY_SEARCH_QUERY_RENAME"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }

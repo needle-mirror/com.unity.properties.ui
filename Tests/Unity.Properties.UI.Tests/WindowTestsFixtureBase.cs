@@ -36,30 +36,23 @@ namespace Unity.Properties.UI.Tests
         [TearDown]
         public void Teardown()
         {
-            m_Window.RemoveRoot();   
+            m_Window.RemoveRoot();
         }
 
         protected PropertyPath GetPath(string path)
         {
-            var p = new PropertyPath();
-            p.AppendPath(path);
-            return p;
+            return new PropertyPath(path);
         }
-        
+
         protected PropertyPath GetListPath(string path, int index)
         {
-            var p = new PropertyPath();
-            p.AppendPath(path);
-            p.PushIndex(index);
-            return p;
+            return PropertyPath.AppendIndex(new PropertyPath(path), index);
         }
-        
+
         protected PropertyPath GetDictionaryPath<TKey>(string path, TKey key)
         {
-            var p = new PropertyPath();
-            p.AppendPath(path);
-            p.PushKey(key);
-            p.PushName("Value");
+            var p = PropertyPath.AppendKey(new PropertyPath(path), key);
+            p = PropertyPath.AppendName(p, "Value");
             return p;
         }
 
@@ -67,7 +60,7 @@ namespace Unity.Properties.UI.Tests
         {
             Element.Query<BindableElement>().ForEach(e => e.binding?.Update());
         }
-        
+
         class TestWindow : EditorWindow
         {
             public PropertyElement Element { get; private set; }
@@ -85,7 +78,7 @@ namespace Unity.Properties.UI.Tests
                 Element?.ClearTarget();
                 Element?.RemoveFromHierarchy();
             }
-            
+
             public static TestWindow NewInstance()
             {
                 var wnd = CreateInstance<TestWindow>();

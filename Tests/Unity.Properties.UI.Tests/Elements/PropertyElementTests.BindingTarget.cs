@@ -16,7 +16,7 @@ namespace Unity.Properties.UI.Tests
             {
             }
     
-            public class NestableInspector : Inspector<Nestable>
+            public class NestableInspector : PropertyInspector<Nestable>
             {
                 public override void Update()
                 {
@@ -26,7 +26,7 @@ namespace Unity.Properties.UI.Tests
             
             [CreateProperty] ICanBeNested m_Nested = new Nestable();
 
-            class DataInspector : Inspector<NestedPropertyElementWithInterfaces>
+            class DataInspector : PropertyInspector<NestedPropertyElementWithInterfaces>
             {
                 public override VisualElement Build()
                 {

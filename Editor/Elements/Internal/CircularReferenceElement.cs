@@ -1,19 +1,18 @@
 using System;
-using Unity.Properties.Editor;
 using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI.Internal
 {
     class CircularReferenceElement<T> : BindableElement, IBinding
     {
-        readonly PropertyElement m_Root;
+        readonly BindingContextElement m_Root;
         readonly PropertyPath m_Path;
         readonly PropertyPath m_PathToReference;
         readonly T m_Value;
         
         IProperty GetProperty() => m_Root.TryGetProperty(m_Path, out var property) ? property : default;
         
-        public CircularReferenceElement(PropertyElement root, IProperty property, T value, PropertyPath path, PropertyPath pathToReference)
+        public CircularReferenceElement(BindingContextElement root, IProperty property, T value, PropertyPath path, PropertyPath pathToReference)
         {
             binding = this;
             m_Root = root;

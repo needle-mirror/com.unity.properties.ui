@@ -19,13 +19,13 @@ namespace Unity.Properties.UI.Tests
         class HideAttribute : Attribute
         {
         }
-        
+
         class ShowAttribute : Attribute
         {
         }
 
         class FilterByAttribute
-        {       
+        {
 
             [Hide] public int Int;
             [Hide] public string String = "";
@@ -39,14 +39,21 @@ namespace Unity.Properties.UI.Tests
             public Texture2D Texture;
         }
 
+        class InlineObject : ScriptableObject
+        {
+            public int IntValue;
+            public float FloatValue;
+            public string StringValue = "Hello";
+        }
+
         [Flags]
         enum LargeFlagsEnum : long
         {
             None      = 1 << 0,
             Large     = 1 << 31,
-            VeryLarge = 2147483648, 
+            VeryLarge = 2147483648,
         }
-        
+
         enum LargeEnum : long
         {
             Large = 1 << 31,
@@ -59,7 +66,7 @@ namespace Unity.Properties.UI.Tests
             None      = 1 << 0,
             Large     = 1 << 31,
         }
-        
+
         enum RegularEnum
         {
             Large     = 1 << 31,
@@ -70,7 +77,7 @@ namespace Unity.Properties.UI.Tests
             public LargeFlagsEnum LargeEnumFlags;
             public LargeEnum LargeEnum;
         }
-        
+
         struct TypeWithLargeAndRegularEnums
         {
             public LargeFlagsEnum LargeEnumFlags;
@@ -78,7 +85,12 @@ namespace Unity.Properties.UI.Tests
             public RegularFlagsEnum RegularFlagsEnum;
             public RegularEnum RegularEnum;
         }
-        
+
+        class ContainsAnInlineObject
+        {
+            [InlineUnityObject] public InlineObject Object;
+        }
+
         [Test]
         public void PropertyElement_Target_CanBeSetAndGet()
         {
@@ -94,11 +106,11 @@ namespace Unity.Properties.UI.Tests
             Assert.DoesNotThrow(() => element.SetTarget((object)container));
             Assert.That(element.TryGetTarget(out UIContainer _), Is.True);
             Assert.DoesNotThrow(() => element.GetTarget<UIContainer>());
-            
+
             Assert.DoesNotThrow(() => element.SetTarget(container));
             Assert.That(element.TryGetTarget(out object _), Is.True);
             Assert.DoesNotThrow(() => element.GetTarget<object>());
-            
+
             var container2 = new ComplexUIContainer();
             Assert.That(element.TryGetTarget(out ComplexUIContainer _), Is.False);
             Assert.Throws<InvalidCastException>(() => element.GetTarget<ComplexUIContainer>());
@@ -112,62 +124,56 @@ namespace Unity.Properties.UI.Tests
             Assert.DoesNotThrow(() => element.GetTarget<ComplexUIContainer>());
         }
 
+        PropertyPath ExpectedPath { get; set; }
+
         [Test]
         public void PropertyElement_Changes_ArePropagated()
         {
             Element.SetTarget(GetContainer());
 
-            var expectedPath = new PropertyPath();
             Element.OnChanged += (propertyElement, path) =>
             {
-                Assert.That(path.ToString(), Is.EqualTo(expectedPath.ToString()));
+                Assert.That(path.ToString(), Is.EqualTo(ExpectedPath.ToString()));
             };
 
             {
                 var field = Element.Query<FloatField>()
-                    .Where(f => f.bindingPath == nameof(ComplexUIContainer.FloatField)).First();
-                expectedPath.Clear();
-                expectedPath.PushName(nameof(ComplexUIContainer.FloatField));
+                    .Where(f => f.name == nameof(ComplexUIContainer.FloatField)).First();
+                ExpectedPath = new PropertyPath(nameof(ComplexUIContainer.FloatField));
                 field.value = 25.0f;
             }
 
             {
                 var field = Element.Query<IntegerField>()
-                    .Where(f => f.bindingPath == nameof(ComplexUIContainer.IntField)).First();
-                expectedPath.Clear();
-                expectedPath.PushName(nameof(ComplexUIContainer.IntField));
+                    .Where(f => f.name == nameof(ComplexUIContainer.IntField)).First();
+                ExpectedPath = new PropertyPath(nameof(ComplexUIContainer.IntField));
                 field.value = 50;
             }
 
             {
                 var field = Element.Query<TextField>()
-                    .Where(f => f.bindingPath == nameof(ComplexUIContainer.StringField)).First();
-                expectedPath.Clear();
-                expectedPath.PushName(nameof(ComplexUIContainer.StringField));
+                    .Where(f => f.name == nameof(ComplexUIContainer.StringField)).First();
+                ExpectedPath = new PropertyPath(nameof(ComplexUIContainer.StringField));
                 field.value = "Mueueue";
             }
 
             {
                 var field = Element.Query<IListElement<List<int>, int>>()
-                    .Where(f => f.bindingPath == nameof(ComplexUIContainer.IntListField)).First()
-                    .Query<IntegerField>().Where(f => f.bindingPath == "2").First();
-                expectedPath.Clear();
-                expectedPath.PushName(nameof(ComplexUIContainer.IntListField));
-                expectedPath.PushIndex(2);
+                    .Where(f => f.name == nameof(ComplexUIContainer.IntListField)).First()
+                    .Query<IntegerField>().Where(f => f.name == "2").First();
+                ExpectedPath = PropertyPath.AppendIndex(new PropertyPath(nameof(ComplexUIContainer.IntListField)), 2);
                 field.value = 4;
             }
 
             {
                 var kvps = Element.Query<DictionaryElement<Dictionary<int, int>, int, int>>()
-                    .Where(f => f.bindingPath == nameof(ComplexUIContainer.IntIntDictionary)).First()
-                    .Query<IntegerField>().Where(f => f.bindingPath == "Value").ToList();
+                    .Where(f => f.name == nameof(ComplexUIContainer.IntIntDictionary)).First()
+                    .Query<IntegerField>().Where(f => f.name == "Value").ToList();
                 for (var i = 0; i < kvps.Count; ++i)
                 {
                     var field = kvps[i];
-                    expectedPath.Clear();
-                    expectedPath.PushName(nameof(ComplexUIContainer.IntIntDictionary));
-                    expectedPath.PushKey(i);
-                    expectedPath.PushName("Value");
+                    ExpectedPath = PropertyPath.AppendKey(new PropertyPath(nameof(ComplexUIContainer.IntIntDictionary)), (object)i);
+                    ExpectedPath = PropertyPath.AppendName(ExpectedPath, "Value");
                     field.value = 20;
                 }
             }
@@ -180,15 +186,15 @@ namespace Unity.Properties.UI.Tests
 
             Element.OnChanged += (propertyElement, path) => throw new Exception();
 
-            Element.Query<FloatField>().Where(f => f.bindingPath == nameof(ComplexUIContainer.FloatField)).First()
+            Element.Query<FloatField>().Where(f => f.name == nameof(ComplexUIContainer.FloatField)).First()
                 .value = 50.0f;
-            Element.Query<IntegerField>().Where(f => f.bindingPath == nameof(ComplexUIContainer.IntField)).First()
+            Element.Query<IntegerField>().Where(f => f.name == nameof(ComplexUIContainer.IntField)).First()
                 .value = 25;
-            Element.Query<TextField>().Where(f => f.bindingPath == nameof(ComplexUIContainer.StringField)).First()
+            Element.Query<TextField>().Where(f => f.name == nameof(ComplexUIContainer.StringField)).First()
                 .value = "Hey";
 
             var items = Element.Query<IListElement<List<int>, int>>()
-                .Where(f => f.bindingPath == nameof(ComplexUIContainer.IntListField)).First()
+                .Where(f => f.name == nameof(ComplexUIContainer.IntListField)).First()
                 .m_ContentRoot.Query<IntegerField>().ToList();
             for (var i = 0; i < items.Count; ++i)
             {
@@ -196,8 +202,8 @@ namespace Unity.Properties.UI.Tests
             }
 
             var kvps = Element.Query<DictionaryElement<Dictionary<int, int>, int, int>>()
-                .Where(f => f.bindingPath == nameof(ComplexUIContainer.IntIntDictionary)).First()
-                .Query<IntegerField>().Where(f => f.bindingPath == "Value").ToList();
+                .Where(f => f.name == nameof(ComplexUIContainer.IntIntDictionary)).First()
+                .Query<IntegerField>().Where(f => f.name == "Value").ToList();
             for (var i = 0; i < kvps.Count; ++i)
             {
                 kvps[i].value = i;
@@ -211,55 +217,25 @@ namespace Unity.Properties.UI.Tests
             var container = GetContainer();
             element.SetTarget(container);
 
-            var path = new PropertyPath();
+            Assert.That(element.IsPathValid(new PropertyPath(nameof(ComplexUIContainer.FloatField))), Is.True);
+            Assert.That(element.IsPathValid(new PropertyPath(nameof(ComplexUIContainer.IntField))), Is.True);
+            Assert.That(element.IsPathValid(new PropertyPath(nameof(ComplexUIContainer.StringField))), Is.True);
+
+            Assert.That(element.IsPathValid(new PropertyPath(nameof(ComplexUIContainer.IntListField))), Is.True);
+            for (var i = 0; i < container.IntListField.Count; ++i)
             {
-                path.Clear();
-                path.PushName(nameof(ComplexUIContainer.FloatField));
-                Assert.That(element.IsPathValid(path), Is.True);
+                Assert.That(element.IsPathValid(PropertyPath.AppendIndex(new PropertyPath(nameof(ComplexUIContainer.IntListField)), i)),
+                    Is.True);
             }
 
             {
-                path.Clear();
-                path.PushName(nameof(ComplexUIContainer.IntField));
-                Assert.That(element.IsPathValid(path), Is.True);
-            }
-
-            {
-                path.Clear();
-                path.PushName(nameof(ComplexUIContainer.StringField));
-                Assert.That(element.IsPathValid(path), Is.True);
-            }
-
-            {
-                path.Clear();
-                path.PushName(nameof(ComplexUIContainer.IntListField));
-                Assert.That(element.IsPathValid(path), Is.True);
-                for (var i = 0; i < container.IntListField.Count; ++i)
-                {
-                    path.PushIndex(i);
-                    Assert.That(element.IsPathValid(path), Is.True);
-                    path.Pop();
-                }
-            }
-
-            {
-                path.Clear();
-                path.PushName(nameof(ComplexUIContainer.IntIntDictionary));
-                Assert.That(element.IsPathValid(path), Is.True);
+                Assert.That(element.IsPathValid(new PropertyPath(nameof(ComplexUIContainer.IntIntDictionary))), Is.True);
                 foreach (var kvp in container.IntIntDictionary.ToList())
                 {
-                    path.PushKey(kvp.Key);
-                    Assert.That(element.IsPathValid(path), Is.True);
-
-                    path.PushName("Key");
-                    Assert.That(element.IsPathValid(path), Is.True);
-                    path.Pop();
-
-                    path.PushName("Value");
-                    Assert.That(element.IsPathValid(path), Is.True);
-                    path.Pop();
-
-                    path.Pop();
+                    var kvpPath = PropertyPath.AppendKey(new PropertyPath(nameof(ComplexUIContainer.IntIntDictionary)), (object)kvp.Key);
+                    Assert.That(element.IsPathValid(kvpPath), Is.True);
+                    Assert.That(element.IsPathValid(PropertyPath.AppendName(kvpPath, "Key")), Is.True);
+                    Assert.That(element.IsPathValid(PropertyPath.AppendName(kvpPath, "Value")), Is.True);
                 }
             }
         }
@@ -271,34 +247,18 @@ namespace Unity.Properties.UI.Tests
             var container = GetContainer();
             element.SetTarget(container);
 
-            var path = new PropertyPath();
+            Assert.That(element.IsPathValid(new PropertyPath("jdhj")), Is.False);
+
+            Assert.That(element.IsPathValid(new PropertyPath(nameof(ComplexUIContainer.IntListField))), Is.True);
+            for (var i = container.IntListField.Count; i < container.IntListField.Count + 10; ++i)
             {
-                path.Clear();
-                path.PushName("jdhj");
-                Assert.That(element.IsPathValid(path), Is.False);
+                Assert.That(element.IsPathValid(PropertyPath.AppendIndex(new PropertyPath(nameof(ComplexUIContainer.IntListField)), i)), Is.False);
             }
 
+            Assert.That(element.IsPathValid(new PropertyPath(nameof(ComplexUIContainer.IntIntDictionary))), Is.True);
+            foreach (var kvp in container.IntIntDictionary.ToList())
             {
-                path.Clear();
-                path.PushName(nameof(ComplexUIContainer.IntListField));
-                Assert.That(element.IsPathValid(path), Is.True);
-                for (var i = container.IntListField.Count; i < container.IntListField.Count + 10; ++i)
-                {
-                    path.PushIndex(i);
-                    Assert.That(element.IsPathValid(path), Is.False);
-                    path.Pop();
-                }
-            }
-
-            {
-                path.Clear();
-                path.PushName(nameof(ComplexUIContainer.IntIntDictionary));
-                Assert.That(element.IsPathValid(path), Is.True);
-                foreach (var kvp in container.IntIntDictionary.ToList())
-                {
-                    path.PushName(kvp.Key.ToString());
-                    Assert.That(element.IsPathValid(path), Is.False);
-                }
+                Assert.That(element.IsPathValid(PropertyPath.AppendName(new PropertyPath(nameof(ComplexUIContainer.IntIntDictionary)), kvp.Key.ToString())), Is.False);
             }
         }
 
@@ -312,13 +272,13 @@ namespace Unity.Properties.UI.Tests
             Assert.That(element[1], Is.InstanceOf<TextField>());
             Assert.That(element[2], Is.InstanceOf<DoubleField>());
             Assert.That(element[3], Is.InstanceOf<FloatField>());
-            
+
             element.SetAttributeFilter(attributes => null == attributes.OfType<HideAttribute>().FirstOrDefault());
-            
+
             Assert.That(element.contentContainer.childCount, Is.EqualTo(1));
             Assert.That(element[0], Is.InstanceOf<FloatField>());
         }
-        
+
         [Test]
         public void PropertyElement_WithAttributeFilter_IncludeInHierarchyGeneration()
         {
@@ -329,9 +289,9 @@ namespace Unity.Properties.UI.Tests
             Assert.That(element[1], Is.InstanceOf<TextField>());
             Assert.That(element[2], Is.InstanceOf<DoubleField>());
             Assert.That(element[3], Is.InstanceOf<FloatField>());
-            
+
             element.SetAttributeFilter(attributes => null != attributes.OfType<ShowAttribute>().FirstOrDefault());
-            
+
             Assert.That(element.contentContainer.childCount, Is.EqualTo(1));
             Assert.That(element[0], Is.InstanceOf<FloatField>());
         }
@@ -349,11 +309,36 @@ namespace Unity.Properties.UI.Tests
         }
 
         [Test]
+        public void PropertyElement_InlinedUnityObject_DoesNotCreateObjectField()
+        {
+            var target = new ContainsAnInlineObject();
+            var element = PropertyElement.MakeWithValue(target);
+            Assert.That(element.Q<NullElement<InlineObject>>(), Is.Not.Null);
+            Assert.That(element.Query<IntegerField>().ToList().Count, Is.EqualTo(0));
+            Assert.That(element.Query<FloatField>().ToList().Count, Is.EqualTo(0));
+            Assert.That(element.Query<TextField>().ToList().Count, Is.EqualTo(0));
+
+            target.Object = ScriptableObject.CreateInstance<InlineObject>();
+            try
+            {
+                Assert.DoesNotThrow(() => element.ForceUpdateBindings());
+                Assert.That(element.Q<NullElement<InlineObject>>(), Is.Null);
+                Assert.That(element.Query<IntegerField>().ToList().Count, Is.EqualTo(1));
+                Assert.That(element.Query<FloatField>().ToList().Count, Is.EqualTo(1));
+                Assert.That(element.Query<TextField>().ToList().Count, Is.EqualTo(1));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(target.Object);
+            }
+        }
+
+        [Test]
         public void EnumFields_WhenUnderlyingTypeIsLong_AreSkipped()
         {
             var element = new PropertyElement();
             element.SetTarget(new TypeWithLargeEnums());
-#if !UNITY_2020_2_OR_NEWER            
+#if !UNITY_2020_2_OR_NEWER
             Assert.That(element.Query<EnumField>().ToList().Count, Is.EqualTo(0));
             Assert.That(element.Query<EnumFlagsField>().ToList().Count, Is.EqualTo(0));
 #else
@@ -370,7 +355,7 @@ namespace Unity.Properties.UI.Tests
             Assert.That(element.Query<EnumFlagsField>().ToList().Count, Is.EqualTo(2));
 #endif
         }
-        
+
         static ComplexUIContainer GetContainer()
         {
             return new ComplexUIContainer

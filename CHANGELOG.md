@@ -1,43 +1,31 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
-## [1.8.3] - 2022-02-01
-### Changed
-* Updated `com.unity.properties` to version `1.8.3-preview`.
-* Updated `com.unity.serialization` to version `1.8.3-preview`.
+## [2.0.0] - 2022-02-09
+## Added
+* Added the `InspectorElement` type to generate a UI hierarchy. This works similarly to `PropertyElement`, but allows to define a custom inspectors specifically for the root target instance.
+* Added support for inlining a `UnityEngine.Object` when the field or property is tagged with the `[InlineUnityObject]` attribute.
+* Added call to action to install the Quick Search package when using `SearchElement` with filters.
+* Added the `InlineUnityObjectAttribute` attribute to inline a `UnityEngine.Object` reference in the UI instead of an `ObjectField`.
+* Added `SearchElement.AddSearchOperatorHandler` to allow custom operator handling.
 
-## [1.8.2] - 2022-01-24
 ### Changed
-* Updated `com.unity.properties` to version `1.8.2-preview`.
-* Updated `com.unity.serialization` to version `1.8.2-preview`.
+* Updated minimum Unity version to `2021.3`.
+* Updated `com.unity.properties` to version `2.0.0-exp.11`.
+* Updated `com.unity.serialization` to version `2.0.0-exp.11`.
+* Updated `com.unity.test-framework.performance` to version `2.4.0`.
+* ***Breaking change*** Previous `Inspector<T>` has been renamed to `PropertyInspector<T>`.
+* ***Breaking change*** `PropertyDrawer<T, TAttribute>` has been renamed to `PropertyInspector<T, TAttribute>`.
+* ***Breaking change*** `Inspector<T>` can now be used to declare custom inspector on root objects, when using `InspectorElement`.
+* ***Breaking change*** `AddSearchFilterProperty` and `AddSearchFilterCallback` now take a `SearchFilterOptions` to provide additional customization.
 
-## [1.8.1] - 2022-01-24
-### Changed
-* Updated `com.unity.properties` to version `1.8.1-preview`.
-* Updated `com.unity.serialization` to version `1.8.1-preview`.
-
-## [1.8.0] - 2022-01-17
-### Changed
-* Updated `com.unity.properties` to version `1.8.0-preview`.
-* Updated `com.unity.serialization` to version `1.8.0-preview`.
-* Update Unity to version '2020.3'.
-
-## [1.7.3] - 2021-10-14
 ### Fixed
+* Fixed `SearchHandler` to always call `OnFilter` at least once when running in `async` mode regardless of results.
+* Fixed exception thrown when returning null from `SetSearchDataProvider`.
+* Fixed exception thrown when returning null or a null element from `AddSearchDataCallback`.
+* In Unity versions prior to `2020.2`, Enums using an underlying type of `long` will now be skipped when generating the UI hierarchy, since they can't be represented correctly.
 * `SearchElement.GlobalStringComparison` property is now correctly propagated to underlying backends.
 * `PropertiesSearchBackend` uses the configured `GlobalStringComparison` instead of `OrdinalIgnoreCase`.
-
-### Added
-* Added call to action to install the Quick Search package when using `SearchElement` with filters.
-
-## [1.7.2] - 2021-08-06
-### Changed
-* Updated `com.unity.properties` to version `1.7.1-preview`.
-* Updated `com.unity.serialization` to version `1.7.3-preview`.
-
-## [1.7.1] - 2021-06-07
-### Changed
-* Updated `com.unity.serialization` to version `1.7.1-preview`.
 
 ## [1.7.0] - 2021-02-26
 ### Changed

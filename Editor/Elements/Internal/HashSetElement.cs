@@ -83,22 +83,22 @@ namespace Unity.Properties.UI.Internal
                 if (!m_PropertyElement.TryGetTarget<NewSetValue>(out var target))
                     return;
 
-                if (!typeof(TValue).IsValueType && null == target.Value)
+                if (!typeof(TValue).IsValueType && EqualityComparer<TValue>.Default.Equals(target.Value, default))
                 {
                     m_ErrorIcon.tooltip = NoNullKeysTooltip;
                     m_ErrorIcon.Show();
-                    m_AddValueToSetButton.SetEnabledSmart(false);
+                    m_AddValueToSetButton.SetEnabled(false);
                 }
                 else if (m_Set.Contains(target.Value))
                 {
                     m_ErrorIcon.tooltip = KeyAlreadyExistsTooltip;
                     m_ErrorIcon.Show();
-                    m_AddValueToSetButton.SetEnabledSmart(false);
+                    m_AddValueToSetButton.SetEnabled(false);
                 }
                 else
                 {
                     m_ErrorIcon.Hide();
-                    m_AddValueToSetButton.SetEnabledSmart(true);
+                    m_AddValueToSetButton.SetEnabled(true);
                 }
             }
 
@@ -143,7 +143,7 @@ namespace Unity.Properties.UI.Internal
         protected override void OnUpdate()
         {
             var set = GetValue();
-            if (null == set)
+            if (EqualityComparer<TSet>.Default.Equals(set, default))
                 return;
 
             if (set.Count == m_Content.childCount)
@@ -168,7 +168,7 @@ namespace Unity.Properties.UI.Internal
             m_Elements.Clear();
 
             var set = GetValue();
-            if (null == set)
+            if (EqualityComparer<TSet>.Default.Equals(set, default))
             {
                 return;
             }
@@ -200,14 +200,14 @@ namespace Unity.Properties.UI.Internal
                     
                     toRemoveParent = toggle;
                     foldout.contentContainer.AddToClassList(UssClasses.SetElement.ItemContent);
-                    foldout.contentContainer.SetEnabledSmart(false);
+                    foldout.contentContainer.SetEnabled(false);
                 }
                 else
                 {
                     toRemoveParent = root;
                     contextMenuParent = root.Q<Label>();
                     element.AddToClassList(UssClasses.SetElement.ItemNoFoldout);
-                    element.contentContainer.SetEnabledSmart(false);
+                    element.contentContainer.SetEnabled(false);
                     root.style.flexDirection = FlexDirection.Row;
                 }
                 
@@ -224,15 +224,14 @@ namespace Unity.Properties.UI.Internal
                 toRemoveParent.Add(button);
                 m_Content.Add(root);
             }
-            
         }
-            void OnRemoveItem(TValue value)
+            void OnRemoveItem(TValue toRemove)
             {
                 var set = GetValue();
-                if (null == set)
+                if (EqualityComparer<TSet>.Default.Equals(set, default))
                     return;
 
-                set.Remove(value);
+                set.Remove(toRemove);
                 Reload();
             }
     }

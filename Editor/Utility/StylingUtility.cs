@@ -33,9 +33,7 @@ namespace Unity.Properties.UI
             {
                 element.style.width = Mathf.Max(topLevelLabelWidth - indentLevel * k_Indent, 0.0f);
                 element.style.minWidth = 0;
-#if UNITY_2020_1_OR_NEWER
                 element.style.textOverflow = TextOverflow.Ellipsis;
-#endif
                 element.style.flexWrap = Wrap.NoWrap;
                 element.style.overflow = Overflow.Hidden;
                 element.style.whiteSpace = WhiteSpace.NoWrap;
@@ -48,9 +46,7 @@ namespace Unity.Properties.UI
                 {
                     label.style.width = Mathf.Max(topLevelLabelWidth - indentLevel * k_Indent + 16.0f, 0.0f);
                     label.style.minWidth = 0;
-#if UNITY_2020_1_OR_NEWER
                     label.style.textOverflow = TextOverflow.Ellipsis;
-#endif
                     label.style.flexWrap = Wrap.NoWrap;
                     label.style.overflow = Overflow.Hidden;
                     label.style.whiteSpace = WhiteSpace.NoWrap;
@@ -62,8 +58,9 @@ namespace Unity.Properties.UI
             if (element is IReloadableElement && element.ClassListContains(UssClasses.ListElement.Item))
                 --indentLevel;
 
-            foreach (var child in element.Children())
+            for(var i = 0; i < element.childCount; ++i)
             {
+                var child = element[i];
                 AlignInspectorLabelWidth (child, topLevelLabelWidth, indentLevel);
             }
         }

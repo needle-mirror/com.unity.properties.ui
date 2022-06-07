@@ -1,7 +1,7 @@
 namespace Unity.Properties.UI
  {
      /// <summary>
-     /// Base type to define an inspection context that can be passed to a <see cref="PropertyElement"/>.
+     /// Base type to define an inspection context that can be passed to a <see cref="BindingContextElement"/>.
      /// </summary>
      public abstract class InspectionContext
      {

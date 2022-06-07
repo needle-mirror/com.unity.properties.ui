@@ -10,10 +10,10 @@ namespace Unity.Properties.UI.Internal
     /// <typeparam name="T">The type of the value being inspected.</typeparam>
     readonly struct InspectorContext<T>
     {
-        public readonly PropertyElement Root;
+        public readonly BindingContextElement Root;
         public readonly PropertyPath BasePath;
         public readonly PropertyPath PropertyPath;
-        public readonly PropertyPath.Part Part;
+        public readonly PropertyPathPart Part;
 
         public readonly string Name;
         public readonly string DisplayName;
@@ -21,24 +21,23 @@ namespace Unity.Properties.UI.Internal
 
         public readonly bool IsDelayed;
         public readonly bool IsReadOnly;
- 
+
         public List<Attribute> Attributes { get; }
 
         public InspectorContext(
-            PropertyElement root,
+            BindingContextElement root,
             PropertyPath propertyPath,
             IProperty property,
             IEnumerable<Attribute> attributes = null
         ){
             Root = root;
             PropertyPath = propertyPath;
-            BasePath = new PropertyPath();
-            BasePath.PushPath(PropertyPath);
-            if (BasePath.PartsCount > 0)
-                BasePath.Pop();
-            
+            BasePath = PropertyPath;
+            if (BasePath.Length > 0)
+                BasePath = PropertyPath.Pop(PropertyPath);
+
             Name = property.Name;
-            Part = PropertyPath.PartsCount> 0 ? PropertyPath[PropertyPath.PartsCount - 1] : default;
+            Part = PropertyPath.Length> 0 ? PropertyPath[PropertyPath.Length - 1] : default;
             var attributeList = new List<Attribute>(attributes ?? property.GetAttributes());
             Attributes = attributeList;
             Tooltip =  property.GetAttribute<TooltipAttribute>()?.tooltip;
@@ -58,7 +57,7 @@ namespace Unity.Properties.UI.Internal
 
         T GetData()
         {
-            if (PropertyPath.PartsCount == 0)
+            if (PropertyPath.Length == 0)
             {
                 return Root.GetTarget<T>();
             }
@@ -72,7 +71,7 @@ namespace Unity.Properties.UI.Internal
 
         void SetData(T value)
         {
-            if (PropertyPath.PartsCount == 0)
+            if (PropertyPath.Length == 0)
             {
                 Root.SetTarget(value);
             }

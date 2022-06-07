@@ -33,7 +33,7 @@ namespace Unity.Properties.UI.Tests
             public float Nested;
         }
 
-        class ComplicatedTypeInspector : Inspector<ComplicatedType>
+        class ComplicatedTypeInspector : PropertyInspector<ComplicatedType>
         {
             public override VisualElement Build()
             {

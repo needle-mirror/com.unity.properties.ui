@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Unity.Properties.Adapters;
+using UnityEngine.Pool;
 using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI.Internal
@@ -25,7 +25,7 @@ namespace Unity.Properties.UI.Internal
             const string KeyAlreadyExistsTooltip = "Key is already contained in the dictionary.";
             TDictionary m_Dictionary;
             readonly IReloadableElement m_Reload;
-            
+
             IBinding IBindable.binding { get; set; }
             string IBindable.bindingPath { get; set; }
 
@@ -44,7 +44,7 @@ namespace Unity.Properties.UI.Internal
                 m_AddKeyToDictionaryButton.clickable.clicked += OnAdd;
                 m_ErrorIcon = this.Q(className: UssClasses.AddKeyDictionaryElement.Error);
             }
-            
+
             public void SetCollection(TDictionary dictionary)
             {
                 m_Dictionary = dictionary;
@@ -81,22 +81,22 @@ namespace Unity.Properties.UI.Internal
                 if (!m_PropertyElement.TryGetTarget<NewDictionaryKey>(out var target))
                     return;
 
-                if (!typeof(TKey).IsValueType && null == target.Key)
+                if (!typeof(TKey).IsValueType && EqualityComparer<TKey>.Default.Equals(target.Key, default))
                 {
                     m_ErrorIcon.tooltip = NoNullKeysTooltip;
                     m_ErrorIcon.Show();
-                    m_AddKeyToDictionaryButton.SetEnabledSmart(false);
+                    m_AddKeyToDictionaryButton.SetEnabled(false);
                 }
                 else if (m_Dictionary.ContainsKey(target.Key))
                 {
                     m_ErrorIcon.tooltip = KeyAlreadyExistsTooltip;
                     m_ErrorIcon.Show();
-                    m_AddKeyToDictionaryButton.SetEnabledSmart(false);
+                    m_AddKeyToDictionaryButton.SetEnabled(false);
                 }
                 else
                 {
                     m_ErrorIcon.Hide();
-                    m_AddKeyToDictionaryButton.SetEnabledSmart(true);
+                    m_AddKeyToDictionaryButton.SetEnabled(true);
                 }
             }
 
@@ -105,7 +105,7 @@ namespace Unity.Properties.UI.Internal
             }
         }
 
-        class DictionaryAdapter : IVisit<KeyValuePair<TKey, TValue>>
+        class DictionaryAdapter : IInspectorVisit<KeyValuePair<TKey, TValue>>
         {
             DictionaryElement<TDictionary, TKey, TValue> DictionaryElement;
 
@@ -114,35 +114,27 @@ namespace Unity.Properties.UI.Internal
                 DictionaryElement = dictionaryElement;
             }
 
-            public VisitStatus Visit<TContainer>(Property<TContainer, KeyValuePair<TKey, TValue>> property, ref TContainer container, ref KeyValuePair<TKey, TValue> value)
+            public bool Visit<TContainer>(InspectorVisitor.InspectorContext inspectorContext, IProperty<TContainer> property, ref KeyValuePair<TKey, TValue> value, PropertyPath path)
             {
                 var visitor = DictionaryElement.GetVisitor();
-                visitor.AddToPath(property);
-                try
-                {
-                    var inspector = (IInspector<KeyValuePair<TKey, TValue>>) new KeyValuePairInspector<TDictionary, TKey, TValue>
+                var inspector =
+                    (IInspector<KeyValuePair<TKey, TValue>>) new KeyValuePairPropertyInspector<TDictionary, TKey, TValue>
                     {
                         DictionaryElement = DictionaryElement
                     };
-            
-                    inspector.Context = new InspectorContext<KeyValuePair<TKey, TValue>>(
-                        visitor.VisitorContext.Root,
-                        visitor.GetCurrentPath(),
-                        property
-                    );
 
-                    var customInspector = new CustomInspectorElement(
-                        visitor.GetCurrentPath(),
-                        inspector,
-                        visitor.VisitorContext.Root);
-                    visitor.VisitorContext.Parent.contentContainer.Add(customInspector);
-                }
-                finally
-                {
-                    visitor.RemoveFromPath(property);
-                }
-            
-                return VisitStatus.Stop;
+                inspector.Context = new InspectorContext<KeyValuePair<TKey, TValue>>(
+                    visitor.Context.Root,
+                    path,
+                    property
+                );
+
+                var customInspector = new CustomInspectorElement(
+                    path,
+                    inspector,
+                    visitor.Context.Root);
+                visitor.Context.Parent.contentContainer.Add(customInspector);
+                return true;
             }
         }
 
@@ -162,7 +154,7 @@ namespace Unity.Properties.UI.Internal
             Add(m_Content);
             Add(m_AddKeyRoot);
         }
- 
+
         public override void OnContextReady()
         {
             m_AddKeyRoot.SetCollection(GetValue());
@@ -171,7 +163,7 @@ namespace Unity.Properties.UI.Internal
         protected override void OnUpdate()
         {
             var dictionary = GetValue();
-            if (null == dictionary)
+            if (EqualityComparer<TDictionary>.Default.Equals(dictionary, default))
                 return;
 
             if (dictionary.Count == m_Content.childCount)
@@ -184,7 +176,7 @@ namespace Unity.Properties.UI.Internal
                     foreach (var keyElement in list)
                     {
                         if (ContainsKey(keyElement
-                            .GetTarget<KeyValuePairInspector<TDictionary, TKey, TValue>.KeyContainer>().Key))
+                            .GetTarget<KeyValuePairPropertyInspector<TDictionary, TKey, TValue>.KeyContainer>().Key))
                             continue;
 
                         Reload();
@@ -205,18 +197,18 @@ namespace Unity.Properties.UI.Internal
         public override void Reload(IProperty property)
         {
             var dictionary = GetValue();
-            if (null == dictionary)
+            if (EqualityComparer<TDictionary>.Default.Equals(dictionary, default))
             {
                 return;
             }
 
-            var visitor = GetVisitor() as PropertyVisitor;
+            var visitor = GetVisitor();
             if (null == visitor)
                 return;
-            
+
             m_Content.Clear();
 
-            visitor.AddAdapter(s_Adapter);
+            visitor.AddExplicitAdapter(s_Adapter);
             try
             {
                 var list = ListPool<TKey>.Get();
@@ -225,9 +217,8 @@ namespace Unity.Properties.UI.Internal
                     list.AddRange(dictionary.Keys);
                     foreach (var key in list)
                     {
-                        Path.PushKey(key);
-                        Root.VisitAtPath(Path, m_Content);
-                        Path.Pop();
+                        var pathAtKey = PropertyPath.AppendKey(Path, key);
+                        Root.VisitAtPath(pathAtKey, m_Content);
                     }
                 }
                 finally
@@ -237,7 +228,7 @@ namespace Unity.Properties.UI.Internal
             }
             finally
             {
-                visitor.RemoveAdapter(s_Adapter);
+                visitor.RemoveExplicitAdapter(s_Adapter);
             }
         }
 
@@ -257,17 +248,15 @@ namespace Unity.Properties.UI.Internal
         internal void SetAtKey(TKey key, TValue newValue)
         {
             var dictionary = GetValue();
-            if (null == dictionary)
+            if (EqualityComparer<TDictionary>.Default.Equals(dictionary, default))
                 return;
 
-            if (dictionary.TryGetValue(key, out var v) && (v?.Equals(newValue) ?? false))
+            if (dictionary.TryGetValue(key, out var v) && EqualityComparer<TValue>.Default.Equals(v, newValue))
                 return;
 
             dictionary[key] = newValue;
-            var changedPath = new PropertyPath();
-            changedPath.PushPath(Path);
-            changedPath.PushKey(key);
-            changedPath.PushName("Value");
+            var changedPath = PropertyPath.AppendKey(Path, key);
+            changedPath = PropertyPath.AppendName(changedPath, "Value");
             Root.NotifyChanged(changedPath);
         }
     }

@@ -12,10 +12,10 @@ namespace Unity.Properties.UI.Tests
         static partial class Types
         {
             public struct InspectedType{}
-            public class InspectedTypeInspector : Inspector<InspectedType> {}
+            public class InspectedTypeInspector : PropertyInspector<InspectedType> {}
             
             public class ThrowsOnBuild{}
-            public class ThrowsOnBuildInspector : Inspector<ThrowsOnBuild>
+            public class ThrowsOnBuildInspector : PropertyInspector<ThrowsOnBuild>
             {
                 public override VisualElement Build()
                 {
@@ -24,7 +24,7 @@ namespace Unity.Properties.UI.Tests
             }
             
             public class ThrowsOnUpdate{}
-            public class ThrowsOnUpdateInspector : Inspector<ThrowsOnUpdate>
+            public class ThrowsOnUpdateInspector : PropertyInspector<ThrowsOnUpdate>
             {
                 public override void Update()
                 {

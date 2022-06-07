@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
-using Unity.Properties.Editor;
 using UnityEditor.UIElements;
 
 namespace Unity.Properties.UI.Internal
@@ -10,11 +9,11 @@ namespace Unity.Properties.UI.Internal
     {
         abstract class Null{}
 
-        readonly PropertyElement m_Root;
+        readonly BindingContextElement m_Root;
         readonly PropertyPath m_Path;
         readonly List<Type> m_PotentialTypes;
 
-        public NullElement(PropertyElement root, IProperty property, PropertyPath path)
+        public NullElement(BindingContextElement root, IProperty property, PropertyPath path)
         {
             m_PotentialTypes = new List<Type> {typeof(Null)};
             binding = this;
@@ -22,7 +21,7 @@ namespace Unity.Properties.UI.Internal
             m_Path = path;
             name = m_Path.ToString();
             
-            TypeConstruction.GetAllConstructableTypes<T>(m_PotentialTypes);
+            TypeConstructionUtility.GetAllConstructableTypes<T>(m_PotentialTypes);
 
             if (typeof(T).IsArray)
             {
@@ -33,7 +32,7 @@ namespace Unity.Properties.UI.Internal
                 button.clickable.clicked += ReloadWithArrayType;
                 if (property.IsReadOnly)
                 {
-                    button.SetEnabledSmart(false);
+                    button.SetEnabled(false);
                 }
                 return;
             }
@@ -47,7 +46,7 @@ namespace Unity.Properties.UI.Internal
                 button.clickable.clicked += ReloadWithFirstType;
                 if (property.IsReadOnly)
                 {
-                    button.SetEnabledSmart(false);
+                    button.SetEnabled(false);
                 }
                 return;
             }
@@ -62,7 +61,7 @@ namespace Unity.Properties.UI.Internal
             if (property.IsReadOnly)
             {
                 typeSelector.pickingMode = PickingMode.Ignore;
-                typeSelector.Q(className: UssClasses.Unity.BasePopupFieldInput).SetEnabledSmart(false);
+                typeSelector.Q(className: UssClasses.Unity.BasePopupFieldInput).SetEnabled(false);
             }
 
             Add(typeSelector);
@@ -90,7 +89,7 @@ namespace Unity.Properties.UI.Internal
                     return;
                 }
 
-                if (null == value)
+                if (EqualityComparer<T>.Default.Equals(value, default))
                     return;
 
                 ReloadWithInstance(value);
@@ -114,20 +113,20 @@ namespace Unity.Properties.UI.Internal
             }
             
             var instance = type == typeof(T)
-                ? TypeConstruction.Construct<T>()
-                : TypeConstruction.Construct<T>(type);
+                ? TypeUtility.Instantiate<T>()
+                : TypeUtility.Instantiate<T>(type);
 
             ReloadWithInstance(instance);
         }
         
         void ReloadWithFirstType()
         {
-            ReloadWithInstance(TypeConstruction.Construct<T>(m_PotentialTypes[1]));
+            ReloadWithInstance(TypeUtility.Instantiate<T>(m_PotentialTypes[1]));
         }
         
         void ReloadWithArrayType()
         {
-            ReloadWithInstance(TypeConstruction.ConstructArray<T>());
+            ReloadWithInstance(TypeUtility.InstantiateArray<T>());
         }
 
         void ReloadWithInstance(T value)

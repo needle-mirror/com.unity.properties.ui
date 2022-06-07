@@ -4,8 +4,15 @@ namespace Unity.Properties.UI.Internal
     {
         const string Base = "unity-properties";
 
+
         public const string Variables = Base + "__variables";
         public const string Highlight = Base + "__highlight";
+
+        public static class Common
+        {
+            public const string Expand = Base + "__expand";
+            public const string Row = Base + "__row";
+        }
 
         public static class ListElement
         {
@@ -91,9 +98,11 @@ namespace Unity.Properties.UI.Internal
         {
             public const string Label = "unity-label";
             public const string ToggleInput = "unity-toggle__input";
+            public const string BaseFieldLabel = "unity-base-field__label";
             public const string BaseFieldInput = "unity-base-field__input";
             public const string BasePopupFieldInput = "unity-base-popup-field__input";
             public const string BaseTextFieldInput = "unity-base-text-field__input";
+            public const string Inspector = "unity-inspector-element";
         }
 
         public static class SearchElement

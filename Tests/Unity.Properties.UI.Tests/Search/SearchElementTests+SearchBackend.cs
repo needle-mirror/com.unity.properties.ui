@@ -27,7 +27,7 @@ namespace Unity.Properties.UI.Tests
             {
             }
 
-            public void AddSearchFilterProperty(string token, PropertyPath path, string[] supportedOperatorTypes = null)
+            public void AddSearchFilterProperty(string token, PropertyPath path, SearchFilterOptions options)
             {
             }
             
@@ -35,7 +35,14 @@ namespace Unity.Properties.UI.Tests
             {
             }
 
-            public void AddSearchFilterCallback<TFilter>(string token, Func<TestData, TFilter> getFilterDataFunc, string[] supportedOperatorTypes = null)
+            public void AddSearchFilterCallback<TFilter>(string token, Func<TestData, TFilter> getFilterDataFunc, SearchFilterOptions options)
+            {
+            }
+
+            public void AddSearchOperatorHandler<TFilterVariable, TFilterConstant>(string op, Func<TFilterVariable, TFilterConstant, bool> handler)
+            {
+            }
+            public void AddSearchOperatorHandler<TFilterVariable, TFilterConstant>(string op, Func<TFilterVariable, TFilterConstant, StringComparison, bool> handler)
             {
             }
 

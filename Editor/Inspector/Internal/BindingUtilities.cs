@@ -21,11 +21,11 @@ namespace Unity.Properties.UI.Internal
                 throw new InvalidOperationException($"Could not find private static method `{nameof(SetCallbacks)}<,>` in the {nameof(BindingUtilities)} class."); 
         }
         
-        public static void Bind<TValue>(VisualElement element, ref TValue value, PropertyPath path, PropertyElement root)
+        public static void Bind<TValue>(VisualElement element, ref TValue value, PropertyPath path, BindingContextElement root)
         {
             switch (element)
             {
-                case PropertyElement propertyElement:
+                case BindingContextElement propertyElement:
                     GuiFactory.SetCallbacks(ref value, path, root, propertyElement);
                     break;
                 case BaseField<TValue> field:
@@ -44,7 +44,7 @@ namespace Unity.Properties.UI.Internal
             }
         }
         
-        static void TrySetCallbacksThroughReflection<TValue>(VisualElement element, ref TValue value, PropertyPath path, PropertyElement root)
+        static void TrySetCallbacksThroughReflection<TValue>(VisualElement element, ref TValue value, PropertyPath path, BindingContextElement root)
         {
             var type = element.GetType();
             var baseFieldType = GetBaseFieldType(type);
@@ -62,7 +62,7 @@ namespace Unity.Properties.UI.Internal
             method.Invoke(null, new object[] {value, element, path, root});
         }
         
-        static void SetCallbacks<TFieldType, TValue>(ref TValue value, BaseField<TFieldType> field, PropertyPath path, PropertyElement root)
+        static void SetCallbacks<TFieldType, TValue>(ref TValue value, BaseField<TFieldType> field, PropertyPath path, BindingContextElement root)
         {
             GuiFactory.SetCallbacks(ref value, path, root, field);
         }

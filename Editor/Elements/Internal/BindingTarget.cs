@@ -6,8 +6,26 @@ namespace Unity.Properties.UI.Internal
 {
     class BindingTarget<TTarget> : IBindingTarget<TTarget>
     {
+        class ReloadAtPathVisitor : PathVisitor, IResetableVisitor
+        {
+            public BindingContextElement Binding;
+            public VisualElement Element;
+
+            public override void Reset()
+            {
+                base.Reset();
+                Binding = null;
+                Element = null;
+            }
+
+            protected override void VisitPath<TContainer, TValue>(Property<TContainer, TValue> property, ref TContainer container, ref TValue value)
+            {
+                Binding.SwapWithInstance(Path, Element, value);
+            }
+        }
+
         TTarget m_Target;
-        readonly InspectorVisitor<TTarget> m_Visitor;
+        readonly InspectorVisitor m_Visitor;
         readonly BindingVisitor m_BindingVisitor;
 
         public TTarget Target
@@ -15,19 +33,20 @@ namespace Unity.Properties.UI.Internal
             get => m_Target;
             set => m_Target = value;
         }
-        public PropertyElement Root { get; }
-        public IInspectorVisitor Visitor { get; }
+
+        public BindingContextElement Root { get; }
+        public InspectorVisitor Visitor { get; }
         public Type DeclaredType { get; }
         public Type TargetType { get; }
-        
-        public BindingTarget(PropertyElement root, TTarget target)
+
+        public BindingTarget(BindingContextElement root, TTarget target)
         {
             Root = root;
             m_Target = target;
 
             DeclaredType = typeof(TTarget);
             TargetType = m_Target.GetType();
-            m_Visitor = new InspectorVisitor<TTarget>(root, target);
+            m_Visitor = new InspectorVisitor(Root);
             Visitor = m_Visitor;
             m_BindingVisitor = new BindingVisitor();
         }
@@ -46,16 +65,24 @@ namespace Unity.Properties.UI.Internal
 
         public bool IsPathValid(PropertyPath path)
         {
-            if (path.PartsCount == 0)
+            return path.Length == 0 || PropertyContainer.IsPathValid(ref m_Target, path);
+        }
+
+        public void ReloadAtPath(PropertyPath path, VisualElement current)
+        {
+            using (var scoped = ScopedVisitor<ReloadAtPathVisitor>.Make())
             {
-                return true;
+                var visitor = scoped.Visitor;
+                visitor.Path = path;
+                visitor.Element = current;
+                visitor.Binding = Root;
+                PropertyContainer.Accept(visitor, path);
             }
-            return PropertyContainer.IsPathValid(ref m_Target, path);
         }
 
         public void RegisterBindings(PropertyPath path, VisualElement element)
         {
-            if (path.Empty)
+            if (path.IsEmpty)
             {
                 BindingUtilities.Bind(element, ref m_Target, path, Root);
                 return;
@@ -65,36 +92,33 @@ namespace Unity.Properties.UI.Internal
             m_BindingVisitor.Path = path;
             m_BindingVisitor.Root = Root;
             m_BindingVisitor.Element = element;
-            PropertyContainer.Visit(ref m_Target, m_BindingVisitor);
+            PropertyContainer.Accept(m_BindingVisitor, ref m_Target);
         }
-        
-        public void VisitAtPath(PropertyPath path, PropertyVisitor visitor)
+
+        public void VisitAtPath(IPropertyVisitor visitor, PropertyPath path)
         {
-            PropertyContainer.Visit(ref m_Target, visitor, path);
+            PropertyContainer.Accept(visitor, ref m_Target, path);
         }
 
         public void VisitAtPath(PropertyPath path, VisualElement parent)
         {
-            VisitAtPath(path, parent, m_Visitor);
+            VisitAtPath(m_Visitor, path, parent);
         }
-        
-        public void VisitAtPath<T>(PropertyPath path, VisualElement parent, InspectorVisitor<T> visitor)
+
+        public void VisitAtPath(InspectorVisitor visitor, PropertyPath path, VisualElement parent)
         {
-            var contextPath = new PropertyPath();
-            contextPath.PushPath(path);
-            contextPath.Pop();
-
-            using (visitor.VisitorContext.MakePropertyPathScope(visitor, contextPath))
-            using (visitor.VisitorContext.MakeParentScope(parent))
-                PropertyContainer.Visit(ref m_Target, visitor, path);
+            var contextPath = PropertyPath.Pop(path);
+            using (visitor.Context.MakePathOverrideScope(contextPath))
+            using (visitor.Context.MakeParentScope(parent))
+                PropertyContainer.Accept(visitor, ref m_Target, path);
         }
 
-        public void SetAtPath<TValue>(PropertyPath path, TValue value)
+        public void SetAtPath<TValue>(TValue value, PropertyPath path)
         {
             PropertyContainer.SetValue(ref m_Target, path, value);
         }
 
-        public bool TrySetAtPath<TValue>(PropertyPath path, TValue value)
+        public bool TrySetAtPath<TValue>(TValue value, PropertyPath path)
         {
             return PropertyContainer.TrySetValue(ref m_Target, path, value);
         }
@@ -117,14 +141,13 @@ namespace Unity.Properties.UI.Internal
         public void GenerateHierarchy()
         {
             Root.Clear();
-            using (m_Visitor.VisitorContext.MakeParentScope(Root))
+            using (m_Visitor.Context.MakeParentScope(Root))
             {
-
                 var wrapper = new PropertyWrapper<TTarget>(Target);
-                PropertyContainer.Visit(ref wrapper, m_Visitor);
+                PropertyContainer.Accept(m_Visitor, ref wrapper);
             }
         }
-        
+
         public void Release()
         {
             Root.Clear();

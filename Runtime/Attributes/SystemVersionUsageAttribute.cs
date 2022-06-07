@@ -6,8 +6,17 @@ namespace Unity.Properties.UI
     /// </summary>
     public enum SystemVersionUsage
     {
+        /// <summary>
+        /// The inspector should only show the major and minor version numbers.
+        /// </summary>
         MajorMinor = 0,
+        /// <summary>
+        /// The inspector should only show the major, minor and build version numbers.
+        /// </summary>
         MajorMinorBuild = 1,
+        /// <summary>
+        /// The inspector should show the major, minor, build and revision version numbers.
+        /// </summary>
         MajorMinorBuildRevision = 2
     }
     

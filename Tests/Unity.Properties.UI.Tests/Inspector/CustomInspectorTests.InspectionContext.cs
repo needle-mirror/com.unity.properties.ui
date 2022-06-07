@@ -1,6 +1,5 @@
 using System;
 using NUnit.Framework;
-using UnityEditor.Graphs;
 using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI.Tests
@@ -30,7 +29,7 @@ namespace Unity.Properties.UI.Tests
                 public bool HasB;
             }
 
-            class ContextTrackerInspector : Inspector<ContextTracker>
+            class ContextTrackerInspector : PropertyInspector<ContextTracker>
             {
                 public override VisualElement Build()
                 {

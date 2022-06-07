@@ -107,7 +107,7 @@ namespace Unity.Properties.UI.Tests
         Type GetDrawerType<T, TAttribute>()
             where TAttribute : UnityEngine.PropertyAttribute
         {
-            return typeof(PropertyDrawer<T, TAttribute>);
+            return typeof(PropertyInspector<T, TAttribute>);
         }
 
         [Test]
@@ -118,7 +118,7 @@ namespace Unity.Properties.UI.Tests
 
             Assert.That(rangeElement, Is.Not.Null);
             Assert.That(rangeElement.childCount, Is.EqualTo(1));
-            Assert.That(rangeElement.Inspector, Is.InstanceOf<PropertyDrawer<float, MinAttribute>>());
+            Assert.That(rangeElement.Inspector, Is.InstanceOf<PropertyInspector<float, MinAttribute>>());
             var floatField = rangeElement.Q<FloatField>();
             floatField.value = -25.0f;
             Assert.That(floatField.value, Is.EqualTo(-15.0f));
@@ -132,7 +132,7 @@ namespace Unity.Properties.UI.Tests
 
             Assert.That(rangeElement, Is.Not.Null);
             Assert.That(rangeElement.childCount, Is.EqualTo(1));
-            Assert.That(rangeElement.Inspector, Is.InstanceOf<PropertyDrawer<float, UnityEngine.RangeAttribute>>());
+            Assert.That(rangeElement.Inspector, Is.InstanceOf<PropertyInspector<float, UnityEngine.RangeAttribute>>());
             var floatField = rangeElement.Q<Slider>();
             floatField.value = -25.0f;
             Assert.That(floatField.value, Is.EqualTo(-15.0f));

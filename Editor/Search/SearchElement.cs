@@ -1,14 +1,13 @@
+using UnityEditor.Search;
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
-using NUnit.Framework;
-using Unity.Properties.Internal;
 using Unity.Properties.UI.Internal;
 using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
-using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI
@@ -20,7 +19,7 @@ namespace Unity.Properties.UI
     public interface ISearchQueryHandler<TData>
     {
         /// <summary>
-        /// This method is invoked whenever a search is performed. 
+        /// This method is invoked whenever a search is performed.
         /// </summary>
         /// <param name="query">The query which can be used to apply the search to some data.</param>
         void HandleSearchQuery(ISearchQuery<TData> query);
@@ -36,12 +35,12 @@ namespace Unity.Properties.UI
         /// Gets the original search string for the query.
         /// </summary>
         string SearchString { get; }
-        
+
         /// <summary>
         /// List of tokens found in the query.
         /// </summary>
         ICollection<string> Tokens { get; }
-        
+
         /// <summary>
         /// Applies the search filters to the specified <see cref="IEnumerable{T}"/> data set.
         /// </summary>
@@ -49,7 +48,33 @@ namespace Unity.Properties.UI
         /// <returns>An <see cref="IEnumerable{T}"/> which returns the filtered data set.</returns>
         IEnumerable<TData> Apply(IEnumerable<TData> data);
     }
-    
+
+    /// <summary>
+    /// A set of optional parameters for registering search filters.
+    /// </summary>
+    public struct SearchFilterOptions
+    {
+        /// <summary>
+        /// If this value is set; this option is displayed in the filter dropdown along with the <see cref="FilterTooltip"/>.
+        /// </summary>
+        public string FilterText;
+
+        /// <summary>
+        /// The tooltip that is shown in the filter dropdown; This is only used if <see cref="FilterText"/> is set.
+        /// </summary>
+        public string FilterTooltip;
+
+        /// <summary>
+        /// The string comparison to use for this filter; If <see langworld="null"/> is passed <see cref="SearchElement.GlobalStringComparison"/> is used.
+        /// </summary>
+        public StringComparison? StringComparison;
+
+        /// <summary>
+        /// List of supported operator tokens. Pass <see langworld="null"/> for all operators.
+        /// </summary>
+        public string[] SupportedOperatorTypes;
+    }
+
     /// <summary>
     /// Represents a reusable control for searching and filtering.
     /// </summary>
@@ -82,25 +107,25 @@ namespace Unity.Properties.UI
             public override void Init(VisualElement element, IUxmlAttributes attributes, CreationContext context)
             {
                 base.Init(element, attributes, context);
-                
+
                 var search = (SearchElement) element;
-                
+
                 search.m_SearchEngine.Clear();
                 search.m_FilterPopupElementItems.Clear();
-                
+
                 foreach (var value in m_SearchData.GetValueFromBag(attributes, context).Split(' '))
                 {
                     if (string.IsNullOrEmpty(value))
                         continue;
-                        
+
                     search.AddSearchDataProperty(new PropertyPath(value));
                 }
-                
+
                 foreach (var value in m_SearchFilters.GetValueFromBag(attributes, context).Split(' '))
                 {
                     var filter = value.Split(':');
 
-                    if (filter.Length != 2 || string.IsNullOrEmpty(filter[0]) || string.IsNullOrEmpty(filter[1])) 
+                    if (filter.Length != 2 || string.IsNullOrEmpty(filter[0]) || string.IsNullOrEmpty(filter[1]))
                         continue;
 
                     var token = filter[0];
@@ -114,7 +139,7 @@ namespace Unity.Properties.UI
                     {
                         Debug.LogWarning(e.Message);
                     }
-                    
+
                     search.AddSearchFilterPopupItem(token, path.ToString().SplitPascalCase());
                 }
 
@@ -140,7 +165,7 @@ namespace Unity.Properties.UI
                             HandlerType = handlerType,
                             MaxFrameTime = maxFrameTime,
                             SearchHandler = null,
-                        }; 
+                        };
                     }
                     else
                     {
@@ -159,19 +184,19 @@ namespace Unity.Properties.UI
                 search.SearchDelay = m_SearchDelay.GetValueFromBag(attributes, context);
 
                 var stringComparisonValue = m_GlobalStringComparison.GetValueFromBag(attributes, context);
-                
+
                 if (Enum.TryParse(stringComparisonValue, out StringComparison stringComparison))
                 {
                     search.GlobalStringComparison = stringComparison;
                 }
                 else
                 {
-                    
+
                     Debug.LogWarning($"SearchElement has invalid StringComparison=[{stringComparisonValue}]. Expected values are {string.Join(",", Enum.GetNames(typeof(StringComparison)))}.");
                 }
             }
         }
-        
+
         /// <summary>
         /// Helper class to store data related to uxml bindings for deferred execution.
         /// </summary>
@@ -181,7 +206,7 @@ namespace Unity.Properties.UI
             /// The <see cref="PropertyPath"/> which holds to source data to be searched.
             /// </summary>
             public PropertyPath SourceDataPath;
-            
+
             /// <summary>
             /// The <see cref="PropertyPath"/> which the filtered results should be placed.
             /// </summary>
@@ -196,20 +221,20 @@ namespace Unity.Properties.UI
             /// The maximum number of milliseconds spent on processing the search per frame.
             /// </summary>
             public int MaxFrameTime;
-            
+
             /// <summary>
             /// The reference to the strongly typed search query handler.
             /// </summary>
             public ISearchHandler SearchHandler;
         }
-        
+
         /// <summary>
         /// Visitor class used to register source data bindings from property paths. i.e. The data which the search should be performed on.
         /// </summary>
         class SourceDataBindingVisitor : PropertyVisitor
         {
             public SearchElement SearchElement;
-            public PropertyElement PropertyElement;
+            public BindingContextElement PropertyElement;
             public PropertyPath SourceDataPath;
             public ISearchHandler SearchHandler;
 
@@ -220,21 +245,21 @@ namespace Unity.Properties.UI
 
             protected override void VisitCollection<TContainer, TCollection, TElement>(Property<TContainer, TCollection> property, ref TContainer container, ref TCollection value)
             {
-                if (RuntimeTypeInfoCache<TCollection>.CanBeNull && null == value)
+                if (TypeTraits<TCollection>.CanBeNull && null == value)
                     throw new InvalidBindingException($"SearchElement has invalid data bindings. SourceDataPath=[{SourceDataPath}] is null.");
 
                 var handler = new SearchHandler<TElement>(SearchElement);
 
                 var root = PropertyElement;
                 var path = SourceDataPath;
-                
+
                 handler.SetSearchDataProvider(() =>
                 {
                     var filtered = root.GetValue<TCollection>(path);
-                    
-                    if (RuntimeTypeInfoCache<TCollection>.CanBeNull && null == filtered)
+
+                    if (TypeTraits<TCollection>.CanBeNull && null == filtered)
                         throw new InvalidBindingException($"SearchElement has invalid data bindings. SourceDataPath=[{path}] is null.");
-                    
+
                     return filtered;
                 });
 
@@ -247,7 +272,7 @@ namespace Unity.Properties.UI
         /// </summary>
         class FilterDataBindingVisitor : PropertyVisitor
         {
-            public PropertyElement PropertyElement;
+            public BindingContextElement PropertyElement;
             public PropertyPath SourceDataPath;
             public PropertyPath FilterDataPath;
             public ISearchHandler SearchHandler;
@@ -261,7 +286,7 @@ namespace Unity.Properties.UI
             {
                 UnityEngine.Assertions.Assert.IsNotNull(SearchHandler, $"{nameof(SourceDataBindingVisitor)} failed to construct the {nameof(SearchHandler<TElement>)}");
 
-                if (RuntimeTypeInfoCache<TCollection>.CanBeNull && null == value)
+                if (TypeTraits<TCollection>.CanBeNull && null == value)
                     throw new InvalidBindingException($"SearchElement has invalid data bindings. FilterDataPath=[{FilterDataPath}] is null.");
 
                 if (!(SearchHandler is SearchHandler<TElement> typed))
@@ -271,33 +296,33 @@ namespace Unity.Properties.UI
                 //       but for now we will just error out.
                 if (value.IsReadOnly)
                     throw new InvalidBindingException($"SearchElement has invalid data bindings. FilterDataPath=[{FilterDataPath}] is ReadOnly.");
-                
+
                 var root = PropertyElement;
                 var path = FilterDataPath;
-                
+
                 typed.OnBeginSearch += _ =>
                 {
                     var filtered = root.GetValue<TCollection>(path);
 
-                    if (RuntimeTypeInfoCache<TCollection>.CanBeNull && null == filtered)
+                    if (TypeTraits<TCollection>.CanBeNull && null == filtered)
                         throw new InvalidBindingException($"SearchElement has invalid data bindings. FilterDataPath=[{path}] is null.");
 
                     filtered.Clear();
                 };
-                
+
                 typed.OnFilter += (_, elements) =>
                 {
                     var filtered = root.GetValue<TCollection>(path);
-                    
-                    if (RuntimeTypeInfoCache<TCollection>.CanBeNull && null == filtered)
+
+                    if (TypeTraits<TCollection>.CanBeNull && null == filtered)
                         throw new InvalidBindingException($"SearchElement has invalid data bindings. FilterDataPath=[{path}] is null.");
-                    
+
                     foreach (var element in elements)
                         filtered.Add(element);
                 };
             }
         }
-        
+
         struct FilterPopupElementChoice
         {
             public string Token;
@@ -372,12 +397,11 @@ namespace Unity.Properties.UI
             {
                 m_SearchElement = searchElement;
                 m_Width = width;
-                
-                // Setup the root element and content.
+
                 Internal.Resources.Templates.Common.AddStyles(this);
                 Internal.Resources.Templates.SearchElementFilterPopup.Clone(this);
                 AddToClassList(UssClasses.SearchElementFilterPopup.Root);
-                
+
                 m_Choices = this.Q<VisualElement>("search-element-filter-popup-choices");
 
                 Assert.IsNotNull(m_Choices);
@@ -387,7 +411,7 @@ namespace Unity.Properties.UI
             public void AddPopupItem(string token, string filterText, string filterTooltip = "")
             {
                 m_ElementCount++;
-                
+
                 // Create a button with two labels.
                 var choiceButton = new Button { tooltip = filterTooltip };
                 var nameLabel = new Label(filterText);
@@ -398,22 +422,22 @@ namespace Unity.Properties.UI
                 choiceButton.AddToClassList(UssClasses.SearchElementFilterPopup.ChoiceButton);
                 nameLabel.AddToClassList(UssClasses.SearchElementFilterPopup.ChoiceName);
                 tokenLabel.AddToClassList(UssClasses.SearchElementFilterPopup.ChoiceToken);
-                
+
                 // Setup visual tree.
                 choiceButton.Add(nameLabel);
                 choiceButton.Add(tokenLabel);
                 m_Choices.Add(choiceButton);
-                
+
                 // Setup event handlers.
                 choiceButton.clickable.clicked += () =>
                 {
                     // Since this is an incomplete filter no need to trigger a search.
                     m_SearchElement.SetValueWithoutNotify(token + ":");
-                    
+
                     // However we do need to manually update the controls and re-focus.
                     m_SearchElement.UpdateControls();
                     m_SearchElement.FocusSearchString();
-                    
+
                     // Close the window.
                     Close();
                 };
@@ -427,8 +451,8 @@ namespace Unity.Properties.UI
         {
             ISearchHandler GetSearchHandler();
             void Parse(string text);
-        } 
-        
+        }
+
         /// <summary>
         /// This class is used to store a reference to a strongly typed query handler callback.
         /// </summary>
@@ -436,10 +460,10 @@ namespace Unity.Properties.UI
         class SearchTarget<TData> : ISearchTarget
         {
             readonly SearchElement SearchElement;
-            
+
             public readonly ISearchQueryHandler<TData> SearchQueryHandler;
             public readonly Action<ISearchQuery<TData>> SearchQueryCallback;
-            
+
             public SearchTarget(SearchElement searchElement, ISearchQueryHandler<TData> searchQueryHandler)
             {
                 SearchElement = searchElement;
@@ -461,7 +485,7 @@ namespace Unity.Properties.UI
 
             public void Parse(string text)
             {
-                SearchQueryCallback(SearchElement.m_SearchEngine.Parse<TData>(text)); 
+                SearchQueryCallback(SearchElement.m_SearchEngine.Parse<TData>(text));
             }
         }
 
@@ -469,7 +493,7 @@ namespace Unity.Properties.UI
         /// The search handler bindings registered from uxml traits.
         /// </summary>
         SearchHandlerBinding m_UxmlSearchHandlerBinding;
-        
+
         /// <summary>
         /// The engine used to perform the actual searching.
         /// </summary>
@@ -484,7 +508,7 @@ namespace Unity.Properties.UI
         /// The add filter button.
         /// </summary>
         readonly Button m_AddFilterButton;
-        
+
         /// <summary>
         /// The cancel filter button.
         /// </summary>
@@ -494,7 +518,7 @@ namespace Unity.Properties.UI
         /// The progress bar used to draw the search progress.
         /// </summary>
         readonly ProgressBar m_ProgressBar;
-        
+
         /// <summary>
         /// Collection of strongly typed search query handlers.
         /// </summary>
@@ -509,7 +533,7 @@ namespace Unity.Properties.UI
         /// The list of items to show for the filter dropdown.
         /// </summary>
         readonly List<FilterPopupElementChoice> m_FilterPopupElementItems = new List<FilterPopupElementChoice>();
-        
+
         /// <summary>
         /// Gets or sets the search string value. This is the string that appears in the text box.
         /// </summary>
@@ -543,60 +567,62 @@ namespace Unity.Properties.UI
 
         // Internal for tests
         internal SearchEngine GetSearchEngine() => m_SearchEngine;
+        
+        /// <summary>
+        /// Returns the underlying <see cref="UnityEditor.Search.QueryEngine{T}"/> for the given <see cref="TData"/> type.
+        /// </summary>
+        /// <typeparam name="TData">The data type to get the engine for.</typeparam>
+        /// <returns>The <see cref="UnityEditor.Search.QueryEngine{T}"/> for the given data type.</returns>
+        public QueryEngine<TData> GetQueryEngine<TData>() => m_SearchEngine.GetQueryEngine<TData>();
 
         /// <summary>
         /// Constructs a new instance of the <see cref="SearchElement"/> control.
         /// </summary>
         public SearchElement()
-        { 
+        {
             // Setup the root element and content.
             Internal.Resources.Templates.Common.AddStyles(this);
             Internal.Resources.Templates.SearchElement.Clone(this);
-            
+
             AddToClassList(UssClasses.SearchElement.Root);
             AddToClassList("unity-base-field");
             AddToClassList("unity-properties__variables");
-            
+
             name = "search-element";
-            
+
             m_SearchStringTextField = this.Q("search-element-text-field-search-string") as TextField;
             m_AddFilterButton = this.Q("search-element-add-filter-button") as Button;
             m_CancelButton = this.Q("search-element-cancel-button") as Button;
             m_ProgressBar = this.Q("search-element-progress-bar") as ProgressBar;
-            
+
             UnityEngine.Assertions.Assert.IsNotNull(m_SearchStringTextField);
             UnityEngine.Assertions.Assert.IsNotNull(m_AddFilterButton);
             UnityEngine.Assertions.Assert.IsNotNull(m_CancelButton);
             UnityEngine.Assertions.Assert.IsNotNull(m_ProgressBar);
 
             m_CancelButton.clickable.clicked += ClearSearchString;
-            
+
             m_SearchStringTextField.RegisterValueChangedCallback(evt =>
             {
                 SearchDelayed(SearchDelay);
                 UpdateControls();
             });
-            
+
             m_SearchStringTextField.RegisterCallback<KeyUpEvent, SearchElement>((evt, element) =>
             {
                 if (evt.keyCode == KeyCode.Escape) element.Search();
             }, this);
-            
+
             m_AddFilterButton.clickable.clicked += () =>
             {
                 if (m_FilterPopupElementItems.Count == 0) return;
 
-#if QUICKSEARCH_2_0_2_OR_NEWER || USE_QUICK_SEARCH_MODULE || USE_SEARCH_MODULE
                 var filterDropdown = new FilterPopupElement(this, FilterPopupWidth);
 
                 foreach (var item in m_FilterPopupElementItems)
                     filterDropdown.AddPopupItem(item.Token, item.Text, item.Tooltip);
 
                 filterDropdown.ShowAtPosition(m_AddFilterButton.worldBound);
-#else
-                var popup = new InstallQuickSearchPopupElement();
-                popup.ShowAtPosition(m_AddFilterButton.worldBound);
-#endif
             };
 
             HideProgress();
@@ -607,7 +633,7 @@ namespace Unity.Properties.UI
         /// This method is invoked by the custom inspector just after the visual tree is built. This method can be used to resolve property bindings.
         /// </summary>
         /// <param name="propertyElement">The root visual element hosting the data.</param>
-        internal void ResolveSearchHandlerBindings(PropertyElement propertyElement)
+        internal void ResolveSearchHandlerBindings(BindingContextElement propertyElement)
         {
             if (null == m_UxmlSearchHandlerBinding)
                 return;
@@ -619,7 +645,7 @@ namespace Unity.Properties.UI
             }
 
             var handler = default(ISearchHandler);
-            
+
             try
             {
                 handler = RegisterSearchQueryHandler(propertyElement, m_UxmlSearchHandlerBinding.SourceDataPath, m_UxmlSearchHandlerBinding.FilteredDataPath);
@@ -646,7 +672,7 @@ namespace Unity.Properties.UI
         /// </summary>
         /// <returns>The search handler created from UXML bindings.</returns>
         public ISearchHandler GetUxmlSearchHandler() => m_UxmlSearchHandlerBinding?.SearchHandler;
-        
+
         /// <summary>
         /// Updates the search string value without invoking the search.
         /// </summary>
@@ -655,18 +681,18 @@ namespace Unity.Properties.UI
         {
             m_SearchStringTextField.SetValueWithoutNotify(newValue);
         }
-        
+
         /// <summary>
         /// Shows and updates the progress bar for the search field.
         /// </summary>
         /// <param name="progress">The progress value to show. Range should be 0 to 1.</param>
         public void ShowProgress(float progress)
         {
-            // We need to multiply here since the highValue is internal and defaults to 100. 
+            // We need to multiply here since the highValue is internal and defaults to 100.
             m_ProgressBar.value = progress * 100f;
             m_ProgressBar.style.visibility = Visibility.Visible;
         }
-        
+
         /// <summary>
         /// Hides the progress bar for the search field.
         /// </summary>
@@ -714,18 +740,24 @@ namespace Unity.Properties.UI
         /// <typeparam name="TData">The search data type.</typeparam>
         public void AddSearchDataCallback<TData>(Func<TData, IEnumerable<string>> getSearchDataFunc)
         {
+            if (null == getSearchDataFunc)
+                throw new ArgumentNullException(nameof(getSearchDataFunc));
+            
             m_SearchEngine.AddSearchDataCallback(getSearchDataFunc);
         }
-        
+
         /// <summary>
         /// Adds a filter based on a binding path. The given token will resolve to a property at the specified <paramref name="path"/>.
         /// </summary>
         /// <param name="token">The identifier of the filter. Typically what precedes the operator in a filter.</param>
         /// <param name="path">The property this token should resolve to.</param>
-        /// <param name="supportedOperatorTypes">List of supported operator tokens. Null for all operators.</param>
-        public void AddSearchFilterProperty(string token, PropertyPath path, string[] supportedOperatorTypes = null)
+        /// <param name="options">The set of filter options.</param>
+        public void AddSearchFilterProperty(string token, PropertyPath path, SearchFilterOptions options = default)
         {
-            m_SearchEngine.AddSearchFilterProperty(token, path, supportedOperatorTypes);
+            m_SearchEngine.AddSearchFilterProperty(token, path, options);
+
+            if (!string.IsNullOrEmpty(options.FilterText))
+                AddSearchFilterPopupItem(options.FilterText, options.FilterTooltip);
         }
 
         /// <summary>
@@ -733,12 +765,15 @@ namespace Unity.Properties.UI
         /// </summary>
         /// <param name="token">The identifier of the filter. Typically what precedes the operator in a filter.</param>
         /// <param name="getSearchDataFunc">Callback used to get the object that is used in the filter. Takes an object of type TData and returns an object of type TFilter.</param>
-        /// <param name="supportedOperatorTypes">List of supported operator tokens. Null for all operators.</param>
+        /// <param name="options">The set of filter options.</param>
         /// <typeparam name="TData">The data type being searched.</typeparam>
         /// <typeparam name="TFilter">The return type for the filter.</typeparam>
-        public void AddSearchFilterCallback<TData, TFilter>(string token, Func<TData, TFilter> getSearchDataFunc, string[] supportedOperatorTypes = null)
+        public void AddSearchFilterCallback<TData, TFilter>(string token, Func<TData, TFilter> getSearchDataFunc, SearchFilterOptions options = default)
         {
-            m_SearchEngine.AddSearchFilterCallback(token, getSearchDataFunc, supportedOperatorTypes);
+            m_SearchEngine.AddSearchFilterCallback(token, getSearchDataFunc, options);
+
+            if (!string.IsNullOrEmpty(options.FilterText))
+                AddSearchFilterPopupItem(options.FilterText, options.FilterTooltip);
         }
 
         /// <summary>
@@ -755,29 +790,54 @@ namespace Unity.Properties.UI
                 Text =  filterText,
                 Tooltip = filterTooltip
             });
-            
+
             UpdateControls();
         }
         
         /// <summary>
-        /// Executes the search using the specified search string. 
+        /// Add a custom filter operator handler.
         /// </summary>
+        /// <typeparam name="TFilterVariable">The operator's left hand side type. This is the type returned by a filter handler.</typeparam>
+        /// <typeparam name="TFilterConstant">The operator's right hand side type.</typeparam>
+        /// <param name="op">The filter operator.</param>
+        /// <param name="handler">Callback to handle the operation. Takes a TFilterVariable (value returned by the filter handler, will vary for each element) and a TFilterConstant (right hand side value of the operator, which is constant), and returns a boolean indicating if the filter passes or not.</param>
+        public void AddSearchOperatorHandler<TFilterVariable, TFilterConstant>(string op, Func<TFilterVariable, TFilterConstant, bool> handler)
+        {
+            m_SearchEngine.AddSearchOperatorHandler(op, handler);
+        }
+
+        /// <summary>
+        /// Add a custom filter operator handler.
+        /// </summary>
+        /// <typeparam name="TFilterVariable">The operator's left hand side type. This is the type returned by a filter handler.</typeparam>
+        /// <typeparam name="TFilterConstant">The operator's right hand side type.</typeparam>
+        /// <param name="op">The filter operator.</param>
+        /// <param name="handler">Callback to handle the operation. Takes a TFilterVariable (value returned by the filter handler, will vary for each element), a TFilterConstant (right hand side value of the operator, which is constant), a StringComparison option and returns a boolean indicating if the filter passes or not.</param>
+        public void AddSearchOperatorHandler<TFilterVariable, TFilterConstant>(string op, Func<TFilterVariable, TFilterConstant, StringComparison, bool> handler)
+        {
+            m_SearchEngine.AddSearchOperatorHandler(op, handler);
+        }
+
+        /// <summary>
+        /// Executes the search using the specified search string.
+        /// </summary>
+        /// <param name="searchString">The search string.</param>
         /// <remarks>
         /// This method can be used when the underlying data changes and the search must be explicitly run.
         /// </remarks>
         public void Search(string searchString)
         {
             SetValueWithoutNotify(searchString);
-            
+
             m_DelayedSearch?.Pause();
             m_DelayedSearch = null;
-            
+
             foreach (var target in m_SearchTargets)
                 target.Parse(m_SearchStringTextField.text);
         }
 
         /// <summary>
-        /// Executes the search using the current search string. 
+        /// Executes the search using the current search string.
         /// </summary>
         /// <remarks>
         /// This method can be used when the underlying data changes and the search must be explicitly run.
@@ -786,7 +846,7 @@ namespace Unity.Properties.UI
         {
             m_DelayedSearch?.Pause();
             m_DelayedSearch = null;
-            
+
             foreach (var target in m_SearchTargets)
                 target.Parse(m_SearchStringTextField.text);
         }
@@ -807,7 +867,7 @@ namespace Unity.Properties.UI
                 m_DelayedSearch = schedule.Execute(Search).StartingIn(delayMs);
             }
         }
-        
+
         /// <summary>
         /// Registers a high level search handler based on the specified bindings. The collection at <paramref name="sourceDataPath"/> will be read from, filtered and written to the <paramref name="filterDataPath"/>.
         /// </summary>
@@ -818,18 +878,18 @@ namespace Unity.Properties.UI
         /// <param name="sourceDataPath">The source data path to read from.</param>
         /// <param name="filterDataPath">The filter data path to write to.</param>
         /// <returns>The search handler which can be used to customize the search or unregister the bindings.</returns>
-        public ISearchHandler RegisterSearchQueryHandler(PropertyElement propertyElement, PropertyPath sourceDataPath, PropertyPath filterDataPath)
+        public ISearchHandler RegisterSearchQueryHandler(BindingContextElement propertyElement, PropertyPath sourceDataPath, PropertyPath filterDataPath)
         {
             if (null != m_UxmlSearchHandlerBinding?.SearchHandler)
             {
-                if (m_UxmlSearchHandlerBinding?.FilteredDataPath?.Equals(filterDataPath) ?? false) 
+                if (m_UxmlSearchHandlerBinding?.FilteredDataPath.Equals(filterDataPath) ?? false)
                     throw new InvalidOperationException($"SearchElement has invalid data bindings. The specified FilterDataPath=[{filterDataPath}] is already being written to by another search handler.");
             }
-            
+
             var sourceDataBindingVisitor = new SourceDataBindingVisitor
             {
                 SearchElement = this,
-                PropertyElement = propertyElement, 
+                PropertyElement = propertyElement,
                 SourceDataPath = sourceDataPath,
                 SearchHandler = null
             };
@@ -848,7 +908,7 @@ namespace Unity.Properties.UI
 
             var filterDataBindingVisitor = new FilterDataBindingVisitor
             {
-                PropertyElement = propertyElement, 
+                PropertyElement = propertyElement,
                 SourceDataPath = sourceDataPath,
                 FilterDataPath = filterDataPath,
                 SearchHandler = sourceDataBindingVisitor.SearchHandler
@@ -869,10 +929,10 @@ namespace Unity.Properties.UI
             {
                 if (null != sourceDataBindingVisitor.SearchHandler)
                     UnregisterSearchQueryHandler(sourceDataBindingVisitor.SearchHandler);
-                
+
                 throw;
             }
-            
+
             return filterDataBindingVisitor.SearchHandler;
         }
 
@@ -889,7 +949,7 @@ namespace Unity.Properties.UI
                 if (target is SearchTarget<TData> typed && (typed.SearchQueryHandler == searchQueryHandler || typed.SearchQueryCallback == searchQueryHandler.HandleSearchQuery))
                     throw new InvalidOperationException("The given searchQueryHandler has already been registered.");
             }
-            
+
             m_SearchTargets.Add(new SearchTarget<TData>(this, searchQueryHandler));
         }
 

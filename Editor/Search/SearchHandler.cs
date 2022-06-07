@@ -59,6 +59,7 @@ namespace Unity.Properties.UI
         Func<IEnumerable<TData>> m_GetSearchDataFunc;
         ISearchQuery<TData> m_SearchQuery;
         int m_CurrentSearchDataIndex;
+        int m_FilterBatchCount;
         IEnumerator<TData> m_Enumerator;
         int m_Count;
 
@@ -92,6 +93,7 @@ namespace Unity.Properties.UI
         /// <summary>
         /// Initializes a new <see cref="SearchHandler{TData}"/> for the specified search element. 
         /// </summary>
+        /// <param name="element">The <see cref="SearchElement"/>.</param>
         /// <remarks>
         /// The search handler is automatically registered to the given element.
         /// </remarks>
@@ -125,6 +127,7 @@ namespace Unity.Properties.UI
             m_SearchElement.HideProgress();
         }
 
+        /// <inheritdoc cref="ISearchQueryHandler{TData}.HandleSearchQuery"/>
         void ISearchQueryHandler<TData>.HandleSearchQuery(ISearchQuery<TData> query)
         {
             if (null == m_GetSearchDataFunc)
@@ -132,22 +135,28 @@ namespace Unity.Properties.UI
 
             Stop();
 
+            var searchData = m_GetSearchDataFunc();
+
+            if (null == searchData)
+                return;
+
             if (Mode == SearchHandlerType.sync || string.IsNullOrEmpty(query.SearchString))
             {
                 OnBeginSearch(query);
-                OnFilter(query, query.Apply(m_GetSearchDataFunc()));
+                OnFilter(query, query.Apply(searchData));
                 OnEndSearch(query);
             }
             else
             {
                 m_SearchQuery = query;
                 m_CurrentSearchDataIndex = 0;
-                m_Count = m_GetSearchDataFunc().Count();
+                m_FilterBatchCount = 0;
+                m_Count = searchData.Count();
                 OnBeginSearch(query);
             }
         }
 
-        void Update()
+        internal void Update()
         {
             if (null == m_SearchQuery || Mode == SearchHandlerType.sync)
                 return;
@@ -167,12 +176,9 @@ namespace Unity.Properties.UI
 
                     if (!batch.Any())
                     {
+                        // This is an empty batch. We must always call 'OnFilter' at least once regardless of results.
+                        OnFilter(m_SearchQuery, m_FrameBatch);
                         Stop();
-                        
-                        if (m_FrameBatch.Count > 0)
-                            OnFilter(m_SearchQuery, m_FrameBatch);
-                        
-                        OnEndSearch(m_SearchQuery);
                         return;
                     }
                 
@@ -187,21 +193,20 @@ namespace Unity.Properties.UI
                     if (m_Stopwatch.ElapsedMilliseconds >= MaxFrameProcessingTimeMs)
                     {
                         if (m_FrameBatch.Count > 0)
+                        {
+                            m_FilterBatchCount++;
                             OnFilter(m_SearchQuery, m_FrameBatch);
+                        }
                         
                         return;
                     }
                 }
 
-                m_Enumerator = null;
+                if (m_FilterBatchCount == 0)
+                    OnFilter(m_SearchQuery, m_FrameBatch);
                 
-                if (m_Stopwatch.ElapsedMilliseconds >= MaxFrameProcessingTimeMs)
-                {
-                    if (m_FrameBatch.Count > 0)
-                        OnFilter(m_SearchQuery, m_FrameBatch);
-                        
-                    return;
-                }
+                Stop();
+                return;
             }
         }
     }

@@ -28,7 +28,7 @@ namespace Unity.Properties.UI.Internal
 
         public static void SetFoldoutState(Type type, PropertyPath path, bool foldout)
         {
-            if (null == type || null == path)
+            if (null == type || path.IsEmpty)
                 return;
 
             var state = UserSettings<UiPersistentState>.GetOrCreate(Key);
@@ -37,7 +37,7 @@ namespace Unity.Properties.UI.Internal
 
         public static bool GetFoldoutState(Type type, PropertyPath path, bool defaultValue = false)
         {
-            if (null == type || null == path)
+            if (null == type || path.IsEmpty)
                 return defaultValue;
 
             var state = UserSettings<UiPersistentState>.GetOrCreate(Key);
@@ -46,7 +46,7 @@ namespace Unity.Properties.UI.Internal
 
         public static void SetPaginationState(Type type, PropertyPath path, int size, int page)
         {
-            if (null == type || null == path)
+            if (null == type || path.IsEmpty)
                 return;
 
             var state = UserSettings<UiPersistentState>.GetOrCreate(Key);
@@ -55,7 +55,7 @@ namespace Unity.Properties.UI.Internal
 
         public static PaginationData GetPaginationState(Type type, PropertyPath path)
         {
-            if (null == type || null == path)
+            if (null == type || path.IsEmpty)
                 return default;
 
             var state = UserSettings<UiPersistentState>.GetOrCreate(Key);

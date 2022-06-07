@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine.UIElements;
 
 namespace Unity.Properties.UI.Internal
@@ -11,9 +12,9 @@ namespace Unity.Properties.UI.Internal
 
     class NullableFoldout<TValue> : Foldout, IBinding, IReloadableElement, IContextElement
     {
-        protected PropertyElement Root { get; private set; }
+        protected BindingContextElement Root { get; private set; }
         public PropertyPath Path { get; private set; }
-        protected IInspectorVisitor GetVisitor() => Root.GetVisitor();
+        protected InspectorVisitor GetVisitor() => Root.GetVisitor();
         protected TValue GetValue() => Root.TryGetValue(Path, out TValue v) ? v : default;
         protected IProperty GetProperty() => Root.TryGetProperty(Path, out var property) ? property : default;
 
@@ -45,7 +46,7 @@ namespace Unity.Properties.UI.Internal
                 }));
         }
 
-        void IContextElement.SetContext(PropertyElement root, PropertyPath path)
+        void IContextElement.SetContext(BindingContextElement root, PropertyPath path)
         {
             Root = root;
             Path = path;
@@ -66,10 +67,14 @@ namespace Unity.Properties.UI.Internal
             {
                 if (!Root.TryGetValue<TValue>(Path, out var current))
                 {
+                    if (Root.IsPathValid(Path))
+                    {
+                        Root.ReloadAtPath(Path, this);
+                    }
                     return;
                 }
 
-                if (typeof(TValue).IsClass && null == current)
+                if (typeof(TValue).IsClass && EqualityComparer<TValue>.Default.Equals(current, default))
                 {
                     ReloadWithInstance(default);
                     return;
@@ -97,16 +102,16 @@ namespace Unity.Properties.UI.Internal
             if (null == visitor)
                 return;
             
-            using (visitor.VisitorContext.MakeParentScope(this))
+            using (visitor.Context.MakeParentScope(this))
             {
-                visitor.AddToPath(Path);
+                visitor.Context.AddToPath(Path);
                 try
                 {
                     Reload(property);
                 }
                 finally
                 {
-                    visitor.RemoveFromPath(Path);
+                    visitor.Context.RemoveFromPath(Path);
                 }
             }
         }

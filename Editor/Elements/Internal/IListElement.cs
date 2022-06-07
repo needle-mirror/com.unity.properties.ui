@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.Properties.Editor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -58,10 +57,10 @@ namespace Unity.Properties.UI.Internal
         {
             var list = GetValue();
             var property = GetProperty();
-            if (property.IsReadOnly && list.IsReadOnly)
+            if ((property?.IsReadOnly ?? true) && list.IsReadOnly)
             {
-                m_Size.SetEnabledSmart(false);
-                m_AddItemButton.SetEnabledSmart(false);
+                m_Size.SetEnabled(false);
+                m_AddItemButton.SetEnabled(false);
             }
 
             UsesPagination = HasAttribute<PaginationAttribute>();
@@ -84,7 +83,7 @@ namespace Unity.Properties.UI.Internal
             m_PaginationElement.SetPaginationSizes(pagination.Sizes);
             m_PaginationElement.AutoHide = pagination.AutoHide;
             var paginationData = UiPersistentState.GetPaginationState(Root.GetTargetType(), Path);
-            if (!paginationData.Equals(default(UiPersistentState.PaginationData)))
+            if (!EqualityComparer<UiPersistentState.PaginationData>.Default.Equals(paginationData, default))
             {
                 m_PaginationElement.TotalCount = GetValue()?.Count ?? 0;
                 m_PaginationElement.SetPaginationSize(paginationData.PaginationSize);
@@ -97,7 +96,7 @@ namespace Unity.Properties.UI.Internal
             m_ContentRoot.Clear();
 
             var list = GetValue();
-            if (null == list)
+            if (EqualityComparer<TList>.Default.Equals(list, default))
                 return;
 
             m_PaginationElement.Update(list.Count);
@@ -118,32 +117,15 @@ namespace Unity.Properties.UI.Internal
                 endIndex = m_PaginationElement.EndIndex;
             }
 
-            var atIndexPath = PropertyPath.Pool.Get();
-            try
+            for (var i = startIndex; i < endIndex; ++i)
             {
-                atIndexPath.PushPath(Path);
+                var index = i;
 
-                for (var i = startIndex; i < endIndex; ++i)
-                {
-                    var index = i;
-
-                    atIndexPath.PushIndex(index);
-                    try
-                    {
-                        var root = new VisualElement();
-                        Root.VisitAtPath(atIndexPath, root);
-                        MakeListElement(root, index);
-                        m_ContentRoot.Add(root);
-                    }
-                    finally
-                    {
-                        atIndexPath.Pop();
-                    }
-                }
-            }
-            finally
-            {
-                PropertyPath.Pool.Release(atIndexPath);
+                var atIndexPath = PropertyPath.AppendIndex(Path, index);
+                var root = new VisualElement();
+                Root.VisitAtPath(atIndexPath, root);
+                MakeListElement(root, index);
+                m_ContentRoot.Add(root);
             }
         }
 
@@ -159,7 +141,7 @@ namespace Unity.Properties.UI.Internal
             }
 
             var iList = GetValue();
-            if (null == iList)
+            if (EqualityComparer<TList>.Default.Equals(iList, default))
                 return;
 
             var constructContext = GetAttribute<CreateElementOnAddAttribute>();
@@ -205,14 +187,14 @@ namespace Unity.Properties.UI.Internal
 
             var type = context.Type;
             return null == type
-                ? TypeConstruction.Construct<TElement>()
-                : TypeConstruction.Construct<TElement>(type);
+                ? TypeUtility.Instantiate<TElement>()
+                : TypeUtility.Instantiate<TElement>(type);
         }
 
         protected override void OnUpdate()
         {
             var list = GetValue();
-            if (null == list)
+            if (EqualityComparer<TList>.Default.Equals(list, default))
                 return;
 
             if (!UsesPagination)
@@ -253,7 +235,7 @@ namespace Unity.Properties.UI.Internal
         void OnAddItem()
         {
             var iList = GetValue();
-            if (null == iList)
+            if (EqualityComparer<TList>.Default.Equals(iList, default))
                 return;
 
             var item = CreateInstance(GetAttribute<CreateElementOnAddAttribute>());
@@ -277,7 +259,7 @@ namespace Unity.Properties.UI.Internal
         void OnRemoveItem(int index)
         {
             var typedIList = GetValue();
-            if (null == typedIList)
+            if (EqualityComparer<TList>.Default.Equals(typedIList, default))
                 return;
 
             switch (typedIList)
@@ -312,9 +294,9 @@ namespace Unity.Properties.UI.Internal
         public void ApplyStyleAtPath(PropertyPath propertyPath)
         {
             var index = 0;
-            for (; index < Path.PartsCount; ++index)
+            for (; index < Path.Length; ++index)
             {
-                if (propertyPath.PartsCount == index)
+                if (propertyPath.Length == index)
                 {
                     return;
                 }
@@ -376,7 +358,7 @@ namespace Unity.Properties.UI.Internal
 
             var list = GetValue();
             var property = GetProperty();
-            var disableRemove = property.IsReadOnly && list.IsReadOnly;
+            var disableRemove = property?.IsReadOnly ?? true && list.IsReadOnly;
 
             contextMenuParent.AddManipulator(
                 new ContextualMenuManipulator(evt =>
@@ -399,7 +381,7 @@ namespace Unity.Properties.UI.Internal
             var button = new Button();
             button.AddToClassList(UssClasses.ListElement.RemoveItemButton);
             button.clickable.clicked += () => { OnRemoveItem(index); };
-            button.SetEnabledSmart(!disableRemove);
+            button.SetEnabled(!disableRemove);
             toRemoveParent.Add(button);
         }
     }

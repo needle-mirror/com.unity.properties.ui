@@ -1,11 +1,13 @@
 {
     "name": "Unity.Properties.UI.Tests",
+    "rootNamespace": "",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Unity.Properties",
         "Unity.Properties.UI",
-        "Unity.Properties.UI.Editor"
+        "Unity.Properties.UI.Editor",
+        "Unity.Serialization"
     ],
     "includePlatforms": [
         "Editor"
@@ -20,17 +22,6 @@
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [
-        {
-            "name": "com.unity.quicksearch",
-            "expression": "2.0.2",
-            "define": "QUICKSEARCH_2_0_2_OR_NEWER"
-        },
-        {
-            "name": "com.unity.quicksearch",
-            "expression": "3.0.0-preview.2",
-            "define": "QUICKSEARCH_3_0_0_OR_NEWER"
-        }
-    ],
+    "versionDefines": [],
     "noEngineReferences": false
 }

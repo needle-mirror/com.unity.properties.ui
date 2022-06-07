@@ -27,7 +27,7 @@ namespace Unity.Properties.UI.Tests
             {
             }
 
-            public class NullInspectorTypeInspector : Inspector<NullInspectorType>
+            public class NullInspectorTypeInspector : PropertyInspector<NullInspectorType>
             {
                 public override VisualElement Build()
                 {
@@ -39,7 +39,7 @@ namespace Unity.Properties.UI.Tests
             {
             }
 
-            public class DefaultInspectorTypeInspector : Inspector<DefaultInspectorType>
+            public class DefaultInspectorTypeInspector : PropertyInspector<DefaultInspectorType>
             {
                 public override VisualElement Build()
                 {
@@ -54,7 +54,7 @@ namespace Unity.Properties.UI.Tests
 
             }
 
-            public class CodeInspectorTypeInspector : Inspector<CodeInspectorType>
+            public class CodeInspectorTypeInspector : PropertyInspector<CodeInspectorType>
             {
                 FloatField Float;
                 IntegerField Int;
@@ -85,7 +85,7 @@ namespace Unity.Properties.UI.Tests
             {
                 }
 
-            public class AllDefaultInspectorTypeInspector : Inspector<AllDefaultInspectorType>
+            public class AllDefaultInspectorTypeInspector : PropertyInspector<AllDefaultInspectorType>
             {
                 public override VisualElement Build()
                 {
@@ -113,7 +113,7 @@ namespace Unity.Properties.UI.Tests
                 Zero, One
             }
 
-            class MyEnumCustomInspector : Inspector<MyEnumCustom>
+            class MyEnumCustomInspector : PropertyInspector<MyEnumCustom>
             {
                 public override VisualElement Build()
                 {
@@ -126,7 +126,7 @@ namespace Unity.Properties.UI.Tests
                 Zero, One
             }
 
-            class MyEnumDefaultInspector : Inspector<MyEnumDefault>
+            class MyEnumDefaultInspector : PropertyInspector<MyEnumDefault>
             {
             }
             
@@ -135,7 +135,7 @@ namespace Unity.Properties.UI.Tests
                 Zero, One
             }
 
-            class MyEnumNullInspector : Inspector<MyEnumNull>
+            class MyEnumNullInspector : PropertyInspector<MyEnumNull>
             {
                 public override VisualElement Build()
                 {
@@ -157,7 +157,7 @@ namespace Unity.Properties.UI.Tests
                 public List<MyEnumNull> Null = new List<MyEnumNull>();
             }
             
-            class MyEnumCustomListInspector : Inspector<List<MyEnumCustom>>
+            class MyEnumCustomListInspector : PropertyInspector<List<MyEnumCustom>>
             {
                 public override VisualElement Build()
                 {
@@ -165,7 +165,7 @@ namespace Unity.Properties.UI.Tests
                 }
             }
     
-            class MyEnumDefaultListInspector : Inspector<List<MyEnumDefault>>
+            class MyEnumDefaultListInspector : PropertyInspector<List<MyEnumDefault>>
             {
                 public override VisualElement Build()
                 {
@@ -173,7 +173,7 @@ namespace Unity.Properties.UI.Tests
                 }
             }
     
-            class MyEnumNullListInspector : Inspector<List<MyEnumNull>>
+            class MyEnumNullListInspector : PropertyInspector<List<MyEnumNull>>
             {
                 public override VisualElement Build()
                 {

@@ -44,6 +44,18 @@ namespace Unity.Properties.UI.Internal
             public static readonly UITemplate SearchElement = new UITemplate("search-element");
             public static readonly UITemplate SearchElementFilterPopup = new UITemplate("search-element-filter-popup");
             public static readonly UITemplate InstallQuickSearchPopup = new UITemplate("install-quick-search-popup");
+            public static readonly UITemplate ContentNotReady = new UITemplate("Selection/content-not-ready");
+            public static readonly UITemplate TwoPaneSplitView = new UITemplate("two-pane-split-view");
+
+            public static class Explorer
+            {
+                public static readonly UITemplate PropertyBagExplorer = new UITemplate("Explorer/property-bag-explorer");
+                public static readonly UITemplate PropertyBagList = new UITemplate("Explorer/property-bag-list");
+                public static readonly UITemplate TypeName = new UITemplate("Explorer/type-name-element");
+                public static readonly UITemplate PropertyBag = new UITemplate("Explorer/property-bag");
+                public static readonly UITemplate Property = new UITemplate("Explorer/property");
+                public static readonly UITemplate AttributeDescriptor = new UITemplate("Explorer/attribute-descriptor");
+            }
         }
     }
 }

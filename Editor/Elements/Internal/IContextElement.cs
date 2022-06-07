@@ -4,7 +4,7 @@ namespace Unity.Properties.UI.Internal
     {
         PropertyPath Path { get; }
         
-        void SetContext(PropertyElement root, PropertyPath path);
+        void SetContext(BindingContextElement root, PropertyPath path);
         void OnContextReady();
     }
 }

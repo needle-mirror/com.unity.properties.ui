@@ -6,7 +6,7 @@ namespace Unity.Properties.UI.Internal
     class BindingVisitor : PathVisitor
     {
         public VisualElement Element;
-        public PropertyElement Root;
+        public BindingContextElement Root;
 
         protected override void VisitPath<TContainer, TValue>(Property<TContainer, TValue> property,
             ref TContainer container, ref TValue value)
