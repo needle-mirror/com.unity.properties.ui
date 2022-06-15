@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
-## [2.0.0] - 2022-02-09
+## [2.0.0] - 2022-06-14
 ## Added
 * Added the `InspectorElement` type to generate a UI hierarchy. This works similarly to `PropertyElement`, but allows to define a custom inspectors specifically for the root target instance.
 * Added support for inlining a `UnityEngine.Object` when the field or property is tagged with the `[InlineUnityObject]` attribute.
@@ -11,8 +11,8 @@ All notable changes to this package will be documented in this file.
 
 ### Changed
 * Updated minimum Unity version to `2021.3`.
-* Updated `com.unity.properties` to version `2.0.0-exp.11`.
-* Updated `com.unity.serialization` to version `2.0.0-exp.11`.
+* Updated `com.unity.properties` to version `2.0.0-exp.13`.
+* Updated `com.unity.serialization` to version `2.0.0-exp.13`.
 * Updated `com.unity.test-framework.performance` to version `2.4.0`.
 * ***Breaking change*** Previous `Inspector<T>` has been renamed to `PropertyInspector<T>`.
 * ***Breaking change*** `PropertyDrawer<T, TAttribute>` has been renamed to `PropertyInspector<T, TAttribute>`.
