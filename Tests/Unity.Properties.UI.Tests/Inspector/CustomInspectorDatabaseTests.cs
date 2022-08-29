@@ -112,20 +112,20 @@ namespace Unity.Properties.UI.Tests
             Assert.That(l1.Count, Is.EqualTo(1));
             Assert.That(l1[0], Is.EqualTo(typeof(SingleInspectorTypeInspector)));
             
-            var l2 = InspectorRegistry.GetInspectorTypes<MultipleInspectorsType>().ToList(); 
+            var l2 = InspectorRegistry.GetInspectorTypes<MultipleInspectorsType>().ToHashSet(); 
             Assert.That(l2.Count, Is.EqualTo(2));
-            Assert.That(l2[0], Is.EqualTo(typeof(MultipleInspectorsTypeInspector)));
-            Assert.That(l2[1], Is.EqualTo(typeof(MultipleInspectorsTypeInspectorWithTag)));
+            Assert.That(l2.Contains(typeof(MultipleInspectorsTypeInspector)), Is.True);
+            Assert.That(l2.Contains(typeof(MultipleInspectorsTypeInspectorWithTag)), Is.True);
             
-            var l3 = InspectorRegistry.GetInspectorTypes<NoInspectorButDrawerType>().ToList(); 
+            var l3 = InspectorRegistry.GetInspectorTypes<NoInspectorButDrawerType>().ToHashSet(); 
             Assert.That(l3.Count, Is.EqualTo(1));
-            Assert.That(l3[0], Is.EqualTo(typeof(NoInspectorButDrawerTypeDrawer)));
+            Assert.That(l3.Contains(typeof(NoInspectorButDrawerTypeDrawer)), Is.True);
             
-            var l4 = InspectorRegistry.GetInspectorTypes<InspectorAndDrawerType>().ToList(); 
+            var l4 = InspectorRegistry.GetInspectorTypes<InspectorAndDrawerType>().ToHashSet(); 
             Assert.That(l4.Count, Is.EqualTo(3));
-            Assert.That(l4[0], Is.EqualTo(typeof(InspectorAndDrawerTypeInspector)));
-            Assert.That(l4[1], Is.EqualTo(typeof(InspectorAndDrawerTypeTypeDrawer)));
-            Assert.That(l4[2], Is.EqualTo(typeof(InspectorAndDrawerTypeTypeDrawerWithTag)));
+            Assert.That(l4.Contains(typeof(InspectorAndDrawerTypeInspector)), Is.True);
+            Assert.That(l4.Contains(typeof(InspectorAndDrawerTypeTypeDrawer)), Is.True);
+            Assert.That(l4.Contains(typeof(InspectorAndDrawerTypeTypeDrawerWithTag)), Is.True);
         }
         
         [Test]

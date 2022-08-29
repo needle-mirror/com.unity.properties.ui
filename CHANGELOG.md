@@ -1,8 +1,13 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [2.1.0] - 2022-08-12
+### Changed
+* Updated `com.unity.properties` to version `2.1.0-exp.1`.
+* Updated `com.unity.serialization` to version `2.1.0-exp.1`.
+
 ## [2.0.0] - 2022-06-14
-## Added
+### Added
 * Added the `InspectorElement` type to generate a UI hierarchy. This works similarly to `PropertyElement`, but allows to define a custom inspectors specifically for the root target instance.
 * Added support for inlining a `UnityEngine.Object` when the field or property is tagged with the `[InlineUnityObject]` attribute.
 * Added call to action to install the Quick Search package when using `SearchElement` with filters.
@@ -11,9 +16,9 @@ All notable changes to this package will be documented in this file.
 
 ### Changed
 * Updated minimum Unity version to `2021.3`.
-* Updated `com.unity.properties` to version `2.0.0-exp.13`.
-* Updated `com.unity.serialization` to version `2.0.0-exp.13`.
-* Updated `com.unity.test-framework.performance` to version `2.4.0`.
+* Updated `com.unity.properties` to version `2.0.0-exp.7`.
+* Updated `com.unity.serialization` to version `2.0.0-exp.7`.
+* Updated `com.unity.test-framework.performance` to version `2.8.0`.
 * ***Breaking change*** Previous `Inspector<T>` has been renamed to `PropertyInspector<T>`.
 * ***Breaking change*** `PropertyDrawer<T, TAttribute>` has been renamed to `PropertyInspector<T, TAttribute>`.
 * ***Breaking change*** `Inspector<T>` can now be used to declare custom inspector on root objects, when using `InspectorElement`.
